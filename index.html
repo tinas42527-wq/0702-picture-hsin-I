@@ -304,6 +304,7 @@
         let sentences = [];
         let bookUnitData = {};
         let isUnlocked = false;
+        let wasCorrectLastCheck = false; // 追蹤上一次檢查是否為正確狀態，用來判斷「這次是不是剛答對」
         let editSentIdx = -1;
 
         let currentEditingImages = []; 
@@ -1132,6 +1133,7 @@
             if (idx === "") { document.getElementById('gameZone').classList.add('hidden'); return; }
             const q = sentences[idx];
             isUnlocked = false;
+            wasCorrectLastCheck = false;
             document.getElementById('gameZone').classList.remove('hidden');
             document.getElementById('targetChinese').innerText = q.chinese;
 
@@ -1454,13 +1456,21 @@
 
             if (!current.every(t => t !== "待填入")) {
                 if (feedback) feedback.classList.add('hidden');
+                wasCorrectLastCheck = false;
                 return;
             }
 
             const isCorrect = q.signOrders && q.signOrders.some(ansArr => JSON.stringify(current) === JSON.stringify(ansArr));
 
             if (isCorrect) {
-                if (!isUnlocked) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                // 只要是「這次檢查」才剛從錯誤/未完成變成正確，就噴一次彩帶；
+                // 這樣換題、重排、答錯後修正，每次答對都會慶祝，但同一次正確不會因重複觸發而連環爆炸
+                if (!wasCorrectLastCheck) {
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    confetti({ particleCount: 60, spread: 100, startVelocity: 45, origin: { x: 0.2, y: 0.5 } });
+                    confetti({ particleCount: 60, spread: 100, startVelocity: 45, origin: { x: 0.8, y: 0.5 } });
+                }
+                wasCorrectLastCheck = true;
                 isUnlocked = true;
                 slots.forEach(s => { s.classList.remove('shake-sad'); s.classList.add('unlocked'); });
                 if (feedback) {
@@ -1469,6 +1479,7 @@
                     feedback.classList.remove('hidden');
                 }
             } else {
+                wasCorrectLastCheck = false;
                 // 答錯：顯示悲傷表情並讓格子輕輕搖晃，鼓勵再試一次
                 slots.forEach(s => {
                     s.classList.add('shake-sad');
