@@ -1323,10 +1323,21 @@
 
             currentDistractors = (q.distractors && Array.isArray(q.distractors)) ? q.distractors.filter(w => w && w.trim() !== '') : [];
 
-            let baseWords = [];
-            if(q.signOrders) {
-                q.signOrders.forEach(arr => { arr.forEach(w => { if(!baseWords.includes(w)) baseWords.push(w); })});
+            // 計算每個單詞在各組正確語序中出現的最大次數，確保重複單詞也能產生足夠的詞卡
+            let wordCounts = {};
+            if (q.signOrders) {
+                q.signOrders.forEach(arr => {
+                    const localCounts = {};
+                    arr.forEach(w => { localCounts[w] = (localCounts[w] || 0) + 1; });
+                    Object.keys(localCounts).forEach(w => {
+                        wordCounts[w] = Math.max(wordCounts[w] || 0, localCounts[w]);
+                    });
+                });
             }
+            let baseWords = [];
+            Object.entries(wordCounts).forEach(([w, count]) => {
+                for (let i = 0; i < count; i++) baseWords.push(w);
+            });
 
             const allItems = [
                 ...baseWords.map(w => ({ w })),
