@@ -125,9 +125,14 @@
                 <select id="sentenceSelect" class="hidden"></select>
                 
                 <div id="gameZone" class="hidden max-w-4xl mx-auto text-center">
-                    <button onclick="returnToGallery()" class="mb-4 flex items-center gap-2 text-sm text-slate-500 hover:text-cyan-600 transition font-medium mx-auto">
-                        ← 返回題目列表
-                    </button>
+                    <div class="mb-4 flex items-center justify-between max-w-md mx-auto">
+                        <button onclick="returnToGallery()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-cyan-600 transition font-medium">
+                            ← 返回題目列表
+                        </button>
+                        <button onclick="goToNextSentence()" class="flex items-center gap-2 text-sm bg-cyan-600 text-white hover:bg-cyan-700 transition font-bold px-3 py-1.5 rounded-lg shadow-sm">
+                            下一題 →
+                        </button>
+                    </div>
                     <div class="bg-white p-6 rounded-2xl mb-8 border border-slate-100 shadow-lg">
                         <h2 id="targetChinese" class="text-3xl font-bold text-slate-800 mb-2"></h2>
                         
@@ -1543,6 +1548,44 @@
             document.getElementById('sentenceSelect').value = idx;
             document.getElementById('sentenceGallery').classList.add('hidden');
             loadSentence();
+        }
+
+        // 取得目前篩選條件（冊別/單元）下，所有已啟用題目的原始索引清單（順序與圖庫一致）
+        function getFilteredEnabledIndices() {
+            const selBook = document.getElementById('filterBook').value;
+            const selUnit = document.getElementById('filterUnit').value;
+            return sentences
+                .map((s, idx) => ({ ...s, originalIdx: idx }))
+                .filter(s => {
+                    if (s.enabled === false) return false;
+                    if (selBook && s.book !== selBook) return false;
+                    if (selUnit && s.unit !== selUnit) return false;
+                    return true;
+                })
+                .map(s => s.originalIdx);
+        }
+
+        // 互動學習前台：切換到下一題（依目前篩選範圍循環）
+        function goToNextSentence() {
+            const list = getFilteredEnabledIndices();
+            if (list.length === 0) return;
+
+            const currentIdx = parseInt(document.getElementById('sentenceSelect').value);
+            const pos = list.indexOf(currentIdx);
+            let nextPos = (pos === -1) ? 0 : pos + 1;
+            let wrapped = false;
+            if (nextPos >= list.length) { nextPos = 0; wrapped = true; }
+
+            selectFromGallery(list[nextPos]);
+
+            if (wrapped) {
+                const feedback = document.getElementById('resultFeedback');
+                if (feedback) {
+                    feedback.textContent = '🔁 已經是最後一題，重新從第一題開始囉！';
+                    feedback.className = 'text-sm font-bold mb-4 text-cyan-600';
+                    feedback.classList.remove('hidden');
+                }
+            }
         }
 
         function returnToGallery() {
