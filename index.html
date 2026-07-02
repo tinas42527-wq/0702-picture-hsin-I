@@ -1,0 +1,1905 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SL-Lab 語法實驗室 - 本機離線多圖版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght=400;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; color: #1e293b; }
+        .tab-btn.active { border-bottom: 3px solid #0891b2; color: #0891b2; }
+        .tab-btn { color: #64748b; transition: all 0.3s; cursor: pointer; }
+        
+        .slot { border: 2px dashed #cbd5e1; min-height: 90px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; background: #ffffff; cursor: default; }
+        
+        .slot.filled, .vocab-card { cursor: grab; }
+        .slot.filled:active, .vocab-card:active { cursor: grabbing !important; }
+
+        .slot.filled { 
+            background: #9333ea; 
+            border: 2px solid #7e22ce; 
+            color: #ffffff; 
+            font-weight: bold; 
+            font-size: 1.25rem; 
+            box-shadow: 0 10px 15px -3px rgba(147, 51, 234, 0.3); 
+        }
+
+        .slot.unlocked { border-color: #10b981; }
+        .slot.drag-over { background: #f3e8ff !important; border: 2px solid #a855f7 !important; transform: scale(1.05); }
+
+        .vocab-card { transition: all 0.2s; }
+        .vocab-card:hover { border-color: #9333ea; background-color: #faf5ff; transform: translateY(-2px); }
+        
+        .admin-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 1.25rem; padding: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+
+        #cardPool.drag-over { background: #e0f2fe; border: 2px solid #0ea5e9; }
+
+        .gallery-card {
+            cursor: pointer;
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            transition: all 0.22s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .gallery-card:hover {
+            border-color: #0891b2;
+            box-shadow: 0 8px 24px rgba(8,145,178,0.18);
+            transform: translateY(-4px) scale(1.02);
+        }
+        .gallery-card img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+        }
+        .gallery-card .no-img {
+            width: 100%;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f3e8ff 100%);
+            font-size: 2.5rem;
+        }
+        .gallery-card .card-label {
+            padding: 0.75rem 1rem;
+            font-weight: bold;
+            font-size: 1rem;
+            color: #1e293b;
+            text-align: center;
+            width: 100%;
+        }
+
+        .draggable-item.dragging {
+            opacity: 0.5;
+            background-color: #f3f4f6;
+            border: 2px dashed #94a3b8;
+        }
+
+        @keyframes shakeSad {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+        .slot.shake-sad {
+            animation: shakeSad 0.5s ease-in-out;
+            border-color: #fb7185 !important;
+            background-color: #fff1f2 !important;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <nav class="flex gap-8 mb-8 border-b border-slate-200 text-lg font-bold">
+            <button onclick="switchTab('learn')" id="tab-learn" class="tab-btn active pb-2">互動學習前台</button>
+            <button onclick="switchTab('admin')" id="tab-admin" class="tab-btn pb-2">教材庫管理</button>
+            <span id="cloudStatus" class="ml-auto text-xs self-center bg-slate-100 text-slate-700 px-2 py-1 rounded font-bold">⚪ 檢查雲端連線中…</span>
+        </nav>
+
+        <section id="page-learn">
+            <div class="w-full">
+                <div id="sentenceGallery" class="mb-6">
+                    <div class="max-w-xl mx-auto mb-6 p-4 bg-white rounded-xl border flex gap-3 shadow-sm">
+                        <select id="filterBook" onchange="updateFilterUnits(); renderGallery();" class="flex-1 p-2 rounded border outline-none text-sm bg-slate-50 font-medium text-slate-700">
+                            <option value="">全部冊別</option>
+                        </select>
+                        <select id="filterUnit" onchange="renderGallery();" class="flex-1 p-2 rounded border outline-none text-sm bg-slate-50 font-medium text-slate-700">
+                            <option value="">全部單元</option>
+                        </select>
+                    </div>
+
+                    <p class="text-slate-500 text-sm mb-4 font-medium text-center">👇 點選圖片開始手語語序練習（僅顯示已勾選啟用的題目）</p>
+                    <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+                    <p id="emptyHint" class="hidden text-slate-400 text-sm py-8 text-center">該冊別/單元下尚未新增任何題目，或題目皆被取消勾選，請前往「教材庫管理」檢查。</p>
+                </div>
+
+                <select id="sentenceSelect" class="hidden"></select>
+                
+                <div id="gameZone" class="hidden max-w-4xl mx-auto text-center">
+                    <button onclick="returnToGallery()" class="mb-4 flex items-center gap-2 text-sm text-slate-500 hover:text-cyan-600 transition font-medium mx-auto">
+                        ← 返回題目列表
+                    </button>
+                    <div class="bg-white p-6 rounded-2xl mb-8 border border-slate-100 shadow-lg">
+                        <h2 id="targetChinese" class="text-3xl font-bold text-slate-800 mb-2"></h2>
+                        
+                        <div id="imageArea" class="hidden py-4 flex flex-col justify-center items-center relative group">
+                            <div class="flex items-center justify-center max-w-full relative">
+                                <button id="prevImgBtn" onclick="changeImage(-1)" class="hidden absolute left-2 bg-black/50 hover:bg-black/70 text-white font-bold w-10 h-10 rounded-full z-10 text-xl transition">◀</button>
+                                
+                                <img id="targetImage" src="" class="max-w-full h-auto max-h-72 rounded-xl shadow-md border border-slate-50">
+                                
+                                <button id="nextImgBtn" onclick="changeImage(1)" class="hidden absolute right-2 bg-black/50 hover:bg-black/70 text-white font-bold w-10 h-10 rounded-full z-10 text-xl transition">▶</button>
+                            </div>
+                            <div id="imageCounter" class="mt-2 text-xs bg-slate-100 px-3 py-1 rounded-full text-slate-500 font-bold"></div>
+                        </div>
+
+                        <div class="pt-3 mt-2 border-t border-slate-100">
+                            <button onclick="togglePlayEdit()" class="text-xs text-slate-400 hover:text-cyan-600 font-bold transition">✏️ 修改題目文字／圖片</button>
+                            <div id="playEditPanel" class="hidden mt-3 text-left bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 font-bold mb-1">中文題目</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" id="playEditChinese" class="flex-1 p-2 border rounded text-sm">
+                                        <button onclick="savePlayChineseEdit()" class="bg-slate-700 text-white px-3 rounded text-xs font-bold whitespace-nowrap">💾 儲存文字</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 font-bold mb-1">🖼️ 圖片管理（可直接新增／刪除，即時生效）</label>
+                                    <div id="playImgList" class="flex flex-wrap gap-2 mb-2 min-h-[64px] p-1 bg-white rounded border border-dashed border-slate-200"></div>
+                                    <input type="file" accept="image/*" multiple onchange="handlePlayFileUpload(event)" class="text-xs w-full bg-white p-1.5 rounded border mb-1">
+                                    <div class="flex gap-1">
+                                        <input type="text" id="playImgUrl" placeholder="或貼上圖片網址（多個網址可用逗號/換行分隔）" class="flex-1 text-xs p-1.5 border rounded bg-white">
+                                        <button onclick="handlePlayUrlAdd()" class="text-xs bg-cyan-600 text-white px-3 rounded font-bold whitespace-nowrap">➕ 加入</button>
+                                    </div>
+                                </div>
+                                <p id="playEditMsg" class="hidden text-xs font-bold text-emerald-600"></p>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div id="resultFeedback" class="hidden text-2xl font-bold mb-4"></div>
+                    <div id="dropZone" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10"></div>
+                    <div id="poolContainer">
+                        <p id="poolHint" class="text-xs text-slate-400 font-medium mb-2 text-center">🃏 詞彙池 — 拖曳或點選放入格子，多餘的字不需要放入</p>
+                        <div id="cardPool" 
+                             class="flex flex-wrap justify-center gap-3 p-6 bg-white/50 rounded-2xl border border-dashed border-slate-300 min-h-[100px]"
+                             ondragover="event.preventDefault(); this.classList.add('drag-over')" 
+                             ondragleave="this.classList.remove('drag-over')" 
+                             ondrop="handleReturnToPool(event)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-admin" class="hidden">
+            <div class="mb-3 p-4 bg-slate-800 text-white rounded-2xl flex flex-wrap justify-between items-center gap-4 shadow-md">
+                <div>
+                    <h3 class="font-bold text-base text-cyan-400">本機教材檔案管理 (.json 備份與移轉)</h3>
+                    <p class="text-xs text-slate-300">目前資料儲存於本機瀏覽器。建議定期「下載教材檔案」進行備份，可在其他電腦「合併上傳」使用。</p>
+                </div>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <button onclick="exportData()" class="bg-cyan-600 hover:bg-cyan-500 transition px-4 py-2 rounded-lg text-sm font-bold shadow">
+                        📥 下載目前教材檔案 (.json)
+                    </button>
+                    <button onclick="manualPushToCloud()" class="bg-emerald-600 hover:bg-emerald-500 transition px-4 py-2 rounded-lg text-sm font-bold shadow">
+                        ☁️ 上傳到雲端
+                    </button>
+                    <button onclick="manualPullFromCloud()" class="bg-indigo-600 hover:bg-indigo-500 transition px-4 py-2 rounded-lg text-sm font-bold shadow">
+                        ☁️ 從雲端下載（覆蓋本機）
+                    </button>
+                    <div class="bg-slate-700 p-1.5 rounded-lg border border-slate-600 flex items-center gap-2">
+                        <span class="text-xs text-slate-300 font-bold pl-1">📤 匯入/合併教材：</span>
+                        <input type="file" id="importFile" accept=".json" onchange="importData(event)" class="text-xs text-slate-400 w-48">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4 p-3 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center text-xs font-medium text-slate-600">
+                <span>🔍 本機容量統計：</span>
+                <span>目前題目總計：<b id="diag-local" class="text-cyan-700">-</b> 筆</span>
+                <span>估計資料佔用：<b id="diag-size" class="text-slate-700">-</b></span>
+                <p class="text-slate-400 text-[11px]">（在瀏覽器未清除快取前，資料永久安全留存）</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="admin-card font-sans">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-cyan-600">句型教材編輯與關聯 (自動高壓縮)</h2>
+                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">💡 提示：在區塊內按住題目即可「上下拖曳排序」，取消勾選則前台不顯示</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="totalSentenceCount" class="text-xs bg-cyan-100 text-cyan-700 px-3 py-1.5 rounded-full font-bold whitespace-nowrap">總題數：0</span>
+                            <button onclick="clearAllSentences()" class="text-xs bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-500 hover:text-white transition whitespace-nowrap">一鍵清除全部句型</button>
+                        </div>
+                    </div>
+                    <div class="space-y-4 mb-6">
+                        <div class="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1 font-bold">📂 關聯冊別</label>
+                                <select id="formBookSelect" onchange="updateFormUnits()" class="w-full p-2 text-sm rounded border bg-white outline-none">
+                                    <option value="">--未選擇冊別--</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1 font-bold">📖 關聯單元</label>
+                                <select id="formUnitSelect" class="w-full p-2 text-sm rounded border bg-white outline-none">
+                                    <option value="">--未選擇單元--</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <input type="text" id="sentChinese" placeholder="中文例句" class="w-full p-3 rounded-lg outline-none border">
+                        
+                        <div class="p-3 border-2 border-dashed border-slate-200 rounded-lg bg-white">
+                            <p class="text-xs text-slate-500 mb-2 font-bold">🖼️ 上傳一或多張圖片（本機自動輕量化壓縮）：</p>
+                            <input type="file" id="localFile" accept="image/*" multiple onchange="handleMultipleFiles(event)" class="text-xs w-full mb-3 bg-slate-50 p-1 rounded">
+                            <textarea id="sentImageUrls" placeholder="或在此貼上網路圖片網址（若有多張請用逗號隔開或換行）" rows="2" class="w-full p-2 rounded border text-xs outline-none focus:border-cyan-500 mb-2"></textarea>
+                            
+                            <p class="text-[11px] text-slate-400 font-bold mb-1">目前已加入的圖片清單 (可點選 ✕ 刪除)：</p>
+                            <div id="imagePreviewList" class="flex flex-wrap gap-2 p-2 bg-slate-50 rounded min-h-[50px]">
+                                <span class="text-xs text-slate-400 m-auto" id="noImgHint">尚未加入任何圖片</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-lg border border-dashed border-cyan-300 bg-cyan-50/50">
+                            <p class="text-xs text-cyan-800 font-bold mb-1">✍️ 正確語序（可輸入多組答案）</p>
+                            <p class="text-xs text-slate-500 mb-2">單字之間用<b>空格</b>隔開。多組答案請用<b>豎線 (|)</b> 隔開。</p>
+                            <input type="text" id="sentOrder" placeholder="正確語序 (多組答案請用豎線 | 隔開)" class="w-full p-3 rounded-lg outline-none border bg-white">
+                        </div>
+                        <div class="p-3 rounded-lg border border-dashed border-amber-300 bg-amber-50">
+                            <p class="text-xs text-amber-700 font-bold mb-1">📝 詞彙池額外單字（干擾詞）</p>
+                            <p class="text-xs text-amber-600 mb-2">不在正確語序中的單字，用空格隔開。</p>
+                            <input type="text" id="sentDistractors" placeholder="例：昨天 很 大家（可不填）" class="w-full p-2 rounded border bg-white text-sm">
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="sentSubmitBtn" onclick="processAndSave()" class="flex-1 bg-cyan-600 text-white py-3 rounded-lg font-bold shadow-md hover:bg-cyan-700 transition">儲存教材</button>
+                            <button onclick="resetSentForm()" id="sentCancelBtn" class="hidden px-4 bg-slate-400 text-white py-3 rounded-lg font-bold shadow-md">取消</button>
+                        </div>
+                    </div>
+                    <div id="sentList" class="space-y-4 max-h-[700px] overflow-y-auto border-t pt-4"></div>
+                </div>
+                
+                <div class="admin-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-purple-600">冊別與單元清單管理</h2>
+                        <button onclick="clearAllBooks()" class="text-xs bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-500 hover:text-white transition">一鍵清除全部冊別</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div class="relative">
+                            <input type="text" id="bookName" list="bookOptions" autocomplete="off" placeholder="選擇或輸入新冊別" 
+                                class="w-full p-3 rounded-lg outline-none border shadow-sm"
+                                onmousedown="if(this.value) { this.oldValue = this.value; this.value = ''; }"
+                                onmouseup="if(this.oldValue) { const self=this; setTimeout(() => { self.value = self.oldValue; }, 1); }"
+                                onfocus="this.placeholder='請選擇或輸入冊別'"
+                                onblur="this.placeholder='選擇或輸入新冊別'">
+                            <datalist id="bookOptions"></datalist>
+                        </div>
+                        <input type="text" id="unitName" placeholder="單元名稱 (留空則僅建冊別)" class="p-3 rounded-lg outline-none border shadow-sm" onkeyup="if(event.key === 'Enter') saveBookUnit()">
+                    </div>
+                    <button onclick="saveBookUnit()" class="w-full bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition shadow-md">✨ 一鍵新增冊別/單元 (Enter)</button>
+                    <div id="bookUnitMsg" class="text-xs rounded-lg px-3 py-2 mb-4 mt-2 border bg-slate-50 text-slate-400 border-slate-200"></div>
+                    <div id="bookUnitListAdmin" class="space-y-4 max-h-80 overflow-y-auto border-t pt-4"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let sentences = [];
+        let bookUnitData = {};
+        let isUnlocked = false;
+        let editSentIdx = -1;
+
+        let currentEditingImages = []; 
+        let currentPlayImgIdx = 0;
+        let currentPlayImgList = [];
+
+        async function runDiagnostic() {
+            document.getElementById('diag-local').textContent = sentences.length;
+            const payload = JSON.stringify({ sentences, bookUnitData });
+            const lsSizeKB = (new Blob([payload]).size / 1024).toFixed(1);
+
+            // 估算 IndexedDB 使用量
+            let idbSizeKB = 0;
+            try {
+                const allKeys = await getAllImgKeysFromDB();
+                const db = await openImgDB();
+                for (const k of allKeys) {
+                    const val = await new Promise(res => {
+                        const tx = db.transaction(IDB_STORE, 'readonly');
+                        const req = tx.objectStore(IDB_STORE).get(k);
+                        req.onsuccess = e => res(e.target.result || '');
+                    });
+                    idbSizeKB += new Blob([val]).size / 1024;
+                }
+            } catch(e) {}
+
+            const totalMB = ((parseFloat(lsSizeKB) + idbSizeKB) / 1024).toFixed(2);
+            document.getElementById('diag-size').textContent =
+                `localStorage: ${lsSizeKB} KB ｜ 圖片(IndexedDB): ${idbSizeKB.toFixed(0)} KB ｜ 合計: ${totalMB} MB ✅`;
+        }
+
+        // ===== IndexedDB 圖片儲存層 =====
+        const IDB_NAME = 'SLLabImgDB';
+        const IDB_VERSION = 1;
+        const IDB_STORE = 'images';
+
+        function openImgDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+                req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+                req.onsuccess = e => resolve(e.target.result);
+                req.onerror = e => reject(e.target.error);
+            });
+        }
+
+        async function saveImgToDB(key, base64) {
+            const db = await openImgDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(IDB_STORE, 'readwrite');
+                tx.objectStore(IDB_STORE).put(base64, key);
+                tx.oncomplete = () => resolve();
+                tx.onerror = e => reject(e.target.error);
+            });
+        }
+
+        async function getImgFromDB(key) {
+            const db = await openImgDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(IDB_STORE, 'readonly');
+                const req = tx.objectStore(IDB_STORE).get(key);
+                req.onsuccess = e => resolve(e.target.result || null);
+                req.onerror = e => reject(e.target.error);
+            });
+        }
+
+        async function deleteImgFromDB(key) {
+            if (!key || !key.startsWith('idb:')) return;
+            const db = await openImgDB();
+            return new Promise((resolve) => {
+                const tx = db.transaction(IDB_STORE, 'readwrite');
+                tx.objectStore(IDB_STORE).delete(key.replace('idb:', ''));
+                tx.oncomplete = () => resolve();
+            });
+        }
+
+        async function getAllImgKeysFromDB() {
+            const db = await openImgDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(IDB_STORE, 'readonly');
+                const req = tx.objectStore(IDB_STORE).getAllKeys();
+                req.onsuccess = e => resolve(e.target.result || []);
+                req.onerror = e => reject(e.target.error);
+            });
+        }
+
+        // 產生唯一 key (以 idb: 開頭代表存在 IndexedDB)
+        function genImgKey() {
+            return 'idb:img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+        }
+
+        // 判斷是否為 idb 引用 key
+        function isIdbKey(str) {
+            return typeof str === 'string' && str.startsWith('idb:');
+        }
+
+        // 將字串安全轉為可放入 HTML 屬性的內容（避免冊別/單元名稱含特殊字元破壞屬性）
+        function escAttr(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // 將字串轉為可安全當作 HTML id 使用的內容
+        function idSafe(str) {
+            return encodeURIComponent(String(str)).replace(/[^a-zA-Z0-9_-]/g, '_');
+        }
+
+        // 將字串安全轉為可嵌入 onclick 內的 JS 字串參數（避免冊別/單元名稱含引號時破壞語法）
+        function jsAttr(str) {
+            return JSON.stringify(String(str)).replace(/"/g, '&quot;');
+        }
+
+        // 將圖片引用（idb key 或 base64/url）解析成可顯示的 src
+        async function resolveImgSrc(ref) {
+            if (!ref) return null;
+            if (isIdbKey(ref)) {
+                return await getImgFromDB(ref.replace('idb:', ''));
+            }
+            return ref; // 直接是 base64 或 URL
+        }
+
+        // 將一個 DOM img 元素設定為指定引用的圖片
+        async function applyImgSrc(imgEl, ref) {
+            const src = await resolveImgSrc(ref);
+            if (src) imgEl.src = src;
+        }
+
+        // ===== 垃圾回收：刪除 IndexedDB 中已無任何題目引用的圖片 key =====
+        async function gcOrphanImages() {
+            try {
+                const allKeys = await getAllImgKeysFromDB();
+                const usedRefs = new Set();
+                sentences.forEach(s => {
+                    (s.images || []).forEach(ref => {
+                        if (isIdbKey(ref)) usedRefs.add(ref.replace('idb:', ''));
+                    });
+                });
+                const db = await openImgDB();
+                const tx = db.transaction(IDB_STORE, 'readwrite');
+                const store = tx.objectStore(IDB_STORE);
+                allKeys.forEach(k => { if (!usedRefs.has(k)) store.delete(k); });
+            } catch(e) { console.warn('GC 失敗', e); }
+        }
+
+        // ===== 雲端同步 (Firebase Realtime Database) =====
+        const CLOUD_DB_URL = 'https://picture-3fc87-default-rtdb.asia-southeast1.firebasedatabase.app/sl_lab_data';
+        let cloudSyncTimer = null;
+        let suppressCloudPush = false;
+        let cloudSyncing = false;
+
+        function getLocalUpdatedAt() {
+            return parseInt(localStorage.getItem('sl_updated_at') || '0', 10);
+        }
+        function setLocalUpdatedAt(ts) {
+            localStorage.setItem('sl_updated_at', String(ts));
+        }
+
+        function updateCloudStatusUI(state) {
+            const el = document.getElementById('cloudStatus');
+            if (!el) return;
+            const map = {
+                syncing: ['🟡 雲端同步中…', 'bg-amber-100 text-amber-800'],
+                synced:  ['🟢 已同步雲端', 'bg-emerald-100 text-emerald-800'],
+                error:   ['🔴 雲端連線失敗（僅本機）', 'bg-red-100 text-red-800'],
+                pending: ['🟠 尚有變更待同步', 'bg-orange-100 text-orange-800'],
+                offline: ['⚪ 本機儲存模式', 'bg-slate-100 text-slate-700']
+            };
+            const [text, cls] = map[state] || map.offline;
+            el.textContent = text;
+            el.className = 'ml-auto text-xs self-center px-2 py-1 rounded font-bold ' + cls;
+        }
+
+        // 將目前資料（圖片一律解析為 base64）打包成可上傳雲端的內容
+        async function buildCloudPayload() {
+            const exportSentences = [];
+            for (const s of sentences) {
+                const resolvedImages = [];
+                for (const ref of (s.images || [])) {
+                    if (isIdbKey(ref)) {
+                        const b64 = await getImgFromDB(ref.replace('idb:', ''));
+                        resolvedImages.push(b64 || ref);
+                    } else {
+                        resolvedImages.push(ref);
+                    }
+                }
+                exportSentences.push({ ...s, images: resolvedImages, image: resolvedImages[0] || "" });
+            }
+            return {
+                sentences: exportSentences,
+                bookUnitData: bookUnitData,
+                updatedAt: getLocalUpdatedAt()
+            };
+        }
+
+        // 實際上傳到 Firebase（覆蓋整個雲端節點）
+        async function pushToCloud(silent) {
+            if (cloudSyncing) return;
+            cloudSyncing = true;
+            if (!silent) updateCloudStatusUI('syncing');
+            try {
+                const payload = await buildCloudPayload();
+                const res = await fetch(CLOUD_DB_URL + '.json', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                updateCloudStatusUI('synced');
+            } catch (err) {
+                console.warn('雲端上傳失敗', err);
+                updateCloudStatusUI('error');
+            } finally {
+                cloudSyncing = false;
+            }
+        }
+
+        // 資料異動後，延遲一小段時間再自動上傳（避免頻繁寫入雲端）
+        function queueCloudSync() {
+            if (suppressCloudPush) return;
+            setLocalUpdatedAt(Date.now());
+            updateCloudStatusUI('pending');
+            clearTimeout(cloudSyncTimer);
+            cloudSyncTimer = setTimeout(() => pushToCloud(true), 1500);
+        }
+
+        // 手動：立即將目前資料上傳（覆蓋）到雲端
+        async function manualPushToCloud() {
+            setLocalUpdatedAt(Date.now());
+            await pushToCloud(false);
+            alert('✅ 已將目前資料上傳到雲端！');
+        }
+
+        // 從雲端下載資料並套用到本機（圖片會存回 IndexedDB）
+        // forceApply = true 時無視版本時間直接覆蓋本機
+        async function pullFromCloud(showAlert, forceApply) {
+            updateCloudStatusUI('syncing');
+            try {
+                const res = await fetch(CLOUD_DB_URL + '.json');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const cloudData = await res.json();
+
+                if (!cloudData || (!cloudData.sentences && !cloudData.bookUnitData)) {
+                    updateCloudStatusUI(sentences.length ? 'synced' : 'offline');
+                    if (showAlert) alert('雲端目前尚無資料。');
+                    return false;
+                }
+
+                const cloudUpdatedAt = cloudData.updatedAt || 0;
+                const localUpdatedAt = getLocalUpdatedAt();
+                if (!forceApply && cloudUpdatedAt <= localUpdatedAt) {
+                    updateCloudStatusUI('synced');
+                    if (showAlert) alert('目前本機資料已是最新，不需下載。');
+                    return false;
+                }
+
+                const newSentences = [];
+                for (const s of (cloudData.sentences || [])) {
+                    const idbImages = [];
+                    for (const ref of (s.images || [])) {
+                        if (ref && typeof ref === 'string' && ref.startsWith('data:')) {
+                            const key = genImgKey();
+                            await saveImgToDB(key.replace('idb:', ''), ref);
+                            idbImages.push(key);
+                        } else {
+                            idbImages.push(ref);
+                        }
+                    }
+                    newSentences.push({ ...s, images: idbImages, image: idbImages[0] || "" });
+                }
+
+                suppressCloudPush = true;
+                sentences = newSentences;
+                bookUnitData = cloudData.bookUnitData || {};
+                sentences.forEach(s => { if (s.enabled === undefined) s.enabled = true; });
+                saveToLocalStore();
+                setLocalUpdatedAt(cloudUpdatedAt);
+                suppressCloudPush = false;
+
+                init();
+                updateCloudStatusUI('synced');
+                if (showAlert) alert('☁️ 已從雲端下載最新資料！');
+                return true;
+            } catch (err) {
+                console.warn('雲端下載失敗', err);
+                updateCloudStatusUI('error');
+                if (showAlert) alert('雲端下載失敗，請檢查網路連線。');
+                return false;
+            }
+        }
+
+        // 手動：從雲端強制下載並覆蓋本機資料
+        async function manualPullFromCloud() {
+            if (!confirm('確定要用雲端資料覆蓋本機目前的資料嗎？')) return;
+            await pullFromCloud(true, true);
+        }
+
+        // 啟動流程：先讀本機資料快速顯示畫面，再背景比對雲端是否有更新版本
+        async function bootStrap() {
+            loadLocalStoreData();
+            try {
+                await pullFromCloud(false, false);
+            } catch (e) {
+                updateCloudStatusUI('error');
+            }
+        }
+
+        // ===== 核心本機資料讀取 =====
+        function loadLocalStoreData() {
+            const localSentences = JSON.parse(localStorage.getItem('sl_cat_s')) || [];
+            const localBookUnit = JSON.parse(localStorage.getItem('sl_book_unit_data')) || {};
+
+            sentences = localSentences;
+            bookUnitData = localBookUnit;
+
+            sentences.forEach(s => {
+                if (s.image && (!s.images || s.images.length === 0)) s.images = [s.image];
+                if (!s.images) s.images = [];
+                if (s.enabled === undefined) s.enabled = true;
+            });
+
+            init();
+            runDiagnostic();
+        }
+
+        // ===== 核心本機資料儲存（圖片已在 IndexedDB，localStorage 只存 key 引用）=====
+        function saveToLocalStore() {
+            localStorage.setItem('sl_cat_s', JSON.stringify(sentences));
+            localStorage.setItem('sl_book_unit_data', JSON.stringify(bookUnitData));
+            runDiagnostic();
+            queueCloudSync();
+        }
+
+        // ===== 圖片壓縮 + 存入 IndexedDB，返回 idb key =====
+        async function handleMultipleFiles(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            const compressAndStore = (file) => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = async function(e) {
+                        const img = new Image();
+                        img.onload = async function() {
+                            const MAX_WIDTH = 1024;
+                            const MAX_HEIGHT = 1024;
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > height) {
+                                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                            } else {
+                                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                            }
+
+                            const canvas = document.createElement('canvas');
+                            canvas.width = width; canvas.height = height;
+                            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                            const base64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                            // 存入 IndexedDB，只保留 key
+                            const key = genImgKey();
+                            await saveImgToDB(key.replace('idb:', ''), base64);
+                            resolve(key);
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            for (let i = 0; i < files.length; i++) {
+                try {
+                    const idbKey = await compressAndStore(files[i]);
+                    currentEditingImages.push(idbKey);
+                } catch (error) {
+                    console.error("圖片處理失敗:", error);
+                }
+            }
+
+            renderImagePreviewList();
+            event.target.value = "";
+        }
+
+        async function renderImagePreviewList() {
+            const listContainer = document.getElementById('imagePreviewList');
+            if (currentEditingImages.length === 0) {
+                listContainer.innerHTML = '<span class="text-xs text-slate-400 m-auto" id="noImgHint">尚未加入任何圖片</span>';
+                return;
+            }
+            listContainer.innerHTML = currentEditingImages.map((_, idx) => `
+                <div id="img-preview-${idx}" class="relative w-14 h-14 border rounded bg-white overflow-hidden group shadow-sm flex items-center justify-center">
+                    <img class="max-w-full max-h-full object-cover" src="">
+                    <button onclick="removePreviewImg(${idx})" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center font-bold rounded-bl hover:bg-red-600">✕</button>
+                </div>
+            `).join('');
+            for (let idx = 0; idx < currentEditingImages.length; idx++) {
+                const src = await resolveImgSrc(currentEditingImages[idx]);
+                const el = document.querySelector(`#img-preview-${idx} img`);
+                if (el && src) el.src = src;
+            }
+        }
+
+        function removePreviewImg(idx) {
+            currentEditingImages.splice(idx, 1);
+            renderImagePreviewList();
+        }
+
+        async function exportData() {
+            if (sentences.length === 0 && Object.keys(bookUnitData).length === 0) {
+                alert("目前教材庫沒有資料可以匯出喔！");
+                return;
+            }
+
+            // 將所有 idb: key 替換成真實 base64，確保匯出 JSON 完整可移植
+            const exportSentences = [];
+            for (const s of sentences) {
+                const resolvedImages = [];
+                for (const ref of (s.images || [])) {
+                    if (isIdbKey(ref)) {
+                        const b64 = await getImgFromDB(ref.replace('idb:', ''));
+                        resolvedImages.push(b64 || ref);
+                    } else {
+                        resolvedImages.push(ref);
+                    }
+                }
+                exportSentences.push({ ...s, images: resolvedImages, image: resolvedImages[0] || "" });
+            }
+
+            const exportObj = {
+                sentences: exportSentences,
+                bookUnitData: bookUnitData,
+                version: "IndexedDB優化版",
+                exportAt: new Date().toISOString()
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `SL_Lab_本機教材備份_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const input = event.target;
+            if (!input.files || input.files.length === 0) return;
+            
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const importedObj = JSON.parse(e.target.result);
+                    if (importedObj && (importedObj.sentences || importedObj.bookUnitData)) {
+                        if (confirm("確認匯入教材？重複題目會自動過濾。")) {
+                            
+                            let incomingSentences = importedObj.sentences || [];
+                            let incomingBookUnitData = importedObj.bookUnitData || {};
+                            let addedSentCount = 0;
+                            let skippedSentCount = 0;
+
+                            Object.entries(incomingBookUnitData).forEach(([book, units]) => {
+                                if (!bookUnitData[book]) bookUnitData[book] = [];
+                                units.forEach(u => {
+                                    if (!bookUnitData[book].includes(u)) bookUnitData[book].push(u);
+                                });
+                            });
+
+                            for (const newS of incomingSentences) {
+                                if(newS.image && (!newS.images || newS.images.length === 0)) newS.images = [newS.image];
+                                if(!newS.images) newS.images = [];
+                                if(newS.enabled === undefined) newS.enabled = true;
+
+                                const isDuplicate = sentences.some(oldS =>
+                                    oldS.chinese === newS.chinese &&
+                                    (oldS.book || "") === (newS.book || "") &&
+                                    (oldS.unit || "") === (newS.unit || "")
+                                );
+
+                                if (!isDuplicate) {
+                                    // 將 base64 圖片移入 IndexedDB，換成 idb key
+                                    const idbImages = [];
+                                    for (const ref of newS.images) {
+                                        if (ref && ref.startsWith('data:')) {
+                                            const key = genImgKey();
+                                            await saveImgToDB(key.replace('idb:', ''), ref);
+                                            idbImages.push(key);
+                                        } else {
+                                            idbImages.push(ref); // URL 或已是 idb key
+                                        }
+                                    }
+                                    newS.images = idbImages;
+                                    newS.image = idbImages[0] || "";
+                                    sentences.push(newS);
+                                    addedSentCount++;
+                                } else {
+                                    skippedSentCount++;
+                                }
+                            }
+
+                            saveToLocalStore();
+                            init();
+                            alert(`🎉 匯入成功！\n• 成功新增：${addedSentCount} 筆\n• 自動過濾重複：${skippedSentCount} 筆`);
+                            input.value = ""; 
+                        }
+                    } else {
+                        alert("檔案格式不正確！");
+                    }
+                } catch (err) {
+                    alert("檔案解析失敗！");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllSentences() {
+            if(confirm("確定要清空這台電腦上所有的題目嗎？（建議先下載檔案備份）")) {
+                sentences = [];
+                saveToLocalStore(); init();
+                returnToGallery();
+            }
+        }
+
+        function clearAllBooks() {
+            if(confirm("確定要刪除所有冊別與單元嗎？")) {
+                bookUnitData = {};
+                saveToLocalStore(); init();
+            }
+        }
+
+        function processAndSave() {
+            const urlText = document.getElementById('sentImageUrls').value.trim();
+            if (urlText) {
+                const urls = urlText.split(/[\n,]+/).map(u => u.trim()).filter(u => u !== "");
+                currentEditingImages = currentEditingImages.concat(urls);
+            }
+
+            const c = document.getElementById('sentChinese').value.trim();
+            const o = document.getElementById('sentOrder').value.trim();
+            const b = document.getElementById('formBookSelect').value;
+            const u = document.getElementById('formUnitSelect').value;
+
+            // 【修改重點】強制檢查是否選擇了冊別與單元，避免題目變成「未定」而找不到
+            if (!c || !o) {
+                alert("請填寫中文例句與正確語序！");
+                return;
+            }
+            if (!b || !u) {
+                alert("❌ 請務必選擇「關聯冊別」與「關聯單元」！\n（若清單中沒有，請先在右側『冊別與單元清單管理』進行新增）");
+                return;
+            }
+            
+            const d = document.getElementById('sentDistractors').value.trim();
+            const orders = o.split('|').map(str => str.trim().split(/\s+/)).filter(arr => arr.length > 0 && arr[0] !== "");
+            
+            const data = { 
+                chinese: c, 
+                images: currentEditingImages, 
+                image: currentEditingImages[0] || "", 
+                signOrders: orders, 
+                distractors: d ? d.split(/\s+/) : [],
+                book: b, unit: u,
+                enabled: editSentIdx === -1 ? true : (sentences[editSentIdx].enabled !== undefined ? sentences[editSentIdx].enabled : true)
+            };
+
+            const isNew = editSentIdx === -1;
+            const backupSentences = [...sentences]; // 預先保留舊資料備份，以防寫入失敗
+
+            if(isNew) {
+                sentences.push(data);
+            } else {
+                sentences[editSentIdx] = data;
+            }
+
+            try {
+                saveToLocalStore(); // 儲存至本機 localStorage（圖片已在 IndexedDB）
+            } catch (error) {
+                console.error(error);
+                sentences = backupSentences;
+                alert("⚠️ 儲存失敗！請嘗試清除部分舊題目或檢查瀏覽器儲存空間設定。");
+                return;
+            }
+
+            resetSentForm();
+            init();
+
+            // 【修改重點】精準鎖定剛新增/修改的題目，並進行高亮與捲動
+            setTimeout(() => {
+                const sentList = document.getElementById('sentList');
+                if (!sentList) return;
+
+                // 利用 data-index 來精確比對剛才資料在列表中的位置
+                const targetIdx = isNew ? sentences.length - 1 : editSentIdx;
+                const targetItem = sentList.querySelector(`.draggable-item[data-index="${targetIdx}"]`);
+                
+                if (targetItem) {
+                    targetItem.style.background = '#fef9c3';
+                    targetItem.style.transition = 'background 1.5s ease';
+                    setTimeout(() => { targetItem.style.background = ''; }, 1500);
+                    targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    if (isNew) sentList.scrollTop = sentList.scrollHeight;
+                }
+            }, 100);
+        }
+
+        // 在按鍵下方同步顯示「目前已建立的冊別及單元」完整資料（會隨資料異動即時更新），並可獨立刪除冊別或單元
+        function renderBookUnitMsg(highlightBook, highlightUnit) {
+            const el = document.getElementById('bookUnitMsg');
+            if (!el) return;
+            const entries = Object.entries(bookUnitData);
+
+            if (entries.length === 0) {
+                el.innerHTML = '尚未建立任何冊別/單元，請於上方輸入後點擊「一鍵新增」。';
+                el.className = 'text-xs rounded-lg px-3 py-2 mb-4 mt-2 border bg-slate-50 text-slate-400 border-slate-200';
+                return;
+            }
+
+            const rows = entries.map(([book, units]) => {
+                const isHiBook = book === highlightBook;
+                const bookHtml = (isHiBook && !highlightUnit)
+                    ? `<span class="bg-emerald-200 text-emerald-800 px-1 rounded font-bold">${book}</span>`
+                    : `<span class="text-purple-700 font-bold">${book}</span>`;
+                const unitsHtml = units.length
+                    ? units.map(u => {
+                        const uLabel = (isHiBook && u === highlightUnit)
+                            ? `<span class="bg-emerald-200 text-emerald-800 px-1 rounded font-bold">${u}</span>`
+                            : `<span class="text-slate-600">${u}</span>`;
+                        return `<span class="inline-flex items-center gap-0.5">${uLabel}<b class="cursor-pointer text-red-300 hover:text-red-500" title="刪除此單元" onclick="deleteUnitEntry(${jsAttr(book)}, ${jsAttr(u)})">✕</b></span>`;
+                      }).join('、')
+                    : '<span class="text-slate-300">（尚無單元）</span>';
+                return `<div class="mb-1 leading-relaxed flex items-start justify-between gap-2">
+                    <div>📖 ${bookHtml}：${unitsHtml}</div>
+                    <button onclick="deleteBookEntry(${jsAttr(book)})" title="刪除整個冊別" class="text-[10px] text-red-400 hover:text-red-600 shrink-0 whitespace-nowrap">🗑️ 刪除整冊</button>
+                </div>`;
+            }).join('');
+
+            el.innerHTML = `<div class="font-bold text-slate-500 mb-1">📚 目前已建立的冊別及單元（可個別刪除）：</div>${rows}`;
+            el.className = 'text-xs rounded-lg px-3 py-2 mb-4 mt-2 border bg-white text-slate-600 border-purple-200 max-h-40 overflow-y-auto';
+        }
+
+        // 獨立刪除整個冊別（含其下所有單元名稱，不影響已建立的題目）
+        function deleteBookEntry(book) {
+            if (!confirm(`確定要刪除整個冊別「${book}」嗎？（其下所有單元名稱也會一併移除，此動作不影響已建立的題目資料）`)) return;
+            delete bookUnitData[book];
+            saveToLocalStore();
+            init();
+        }
+
+        // 獨立刪除單一單元
+        function deleteUnitEntry(book, unit) {
+            if (!confirm(`確定要刪除單元「${book} - ${unit}」嗎？`)) return;
+            if (bookUnitData[book]) {
+                bookUnitData[book] = bookUnitData[book].filter(u => u !== unit);
+                if (bookUnitData[book].length === 0) delete bookUnitData[book];
+            }
+            saveToLocalStore();
+            init();
+        }
+
+        function saveBookUnit() {
+            const bookInput = document.getElementById('bookName');
+            const unitInput = document.getElementById('unitName');
+            const book = bookInput.value.trim();
+            const unit = unitInput.value.trim();
+            
+            if(!book) {
+                alert("請輸入或選擇冊別名稱！");
+                return;
+            }
+            const isNewBook = !bookUnitData[book];
+            if(!bookUnitData[book]) bookUnitData[book] = []; 
+            
+            let addedUnit = '';
+            if(unit) { 
+                const isNewUnit = !bookUnitData[book].includes(unit);
+                if(isNewUnit) bookUnitData[book].push(unit); 
+                unitInput.value = '';
+                unitInput.focus();
+                addedUnit = unit;
+            }
+            
+            saveToLocalStore(); init();
+            renderBookUnitMsg(book, addedUnit);
+            highlightBookUnitEntry(book, unit);
+
+            clearTimeout(saveBookUnit._t);
+            saveBookUnit._t = setTimeout(() => renderBookUnitMsg(), 2500);
+        }
+
+        // 新增冊別/單元後，在下方清單中定位並高亮顯示剛新增的資料
+        function highlightBookUnitEntry(book, unit) {
+            setTimeout(() => {
+                if (unit) {
+                    const chip = document.getElementById(`bu-chip-${idSafe(book)}-${idSafe(unit)}`);
+                    if (chip) {
+                        chip.classList.add('bg-emerald-100', 'border-emerald-400', 'ring-2', 'ring-emerald-300');
+                        chip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => {
+                            chip.classList.remove('bg-emerald-100', 'border-emerald-400', 'ring-2', 'ring-emerald-300');
+                        }, 1800);
+                        return;
+                    }
+                }
+                const block = document.getElementById(`bu-block-${idSafe(book)}`);
+                if (block) {
+                    block.style.background = '#d1fae5';
+                    block.style.transition = 'background 1.5s ease';
+                    block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => { block.style.background = ''; }, 1500);
+                }
+            }, 100);
+        }
+
+        function editSentence(idx) {
+            editSentIdx = idx; const s = sentences[idx];
+            document.getElementById('sentChinese').value = s.chinese;
+            
+            currentEditingImages = s.images ? [...s.images] : (s.image ? [s.image] : []);
+            document.getElementById('sentImageUrls').value = "";
+            renderImagePreviewList();
+            
+            if(s.signOrders) {
+                document.getElementById('sentOrder').value = s.signOrders.map(arr => arr.join(' ')).join(' | ');
+            }
+            
+            document.getElementById('sentDistractors').value = (s.distractors || []).join(' ');
+            document.getElementById('formBookSelect').value = s.book || "";
+            updateFormUnits();
+            document.getElementById('formUnitSelect').value = s.unit || "";
+
+            document.getElementById('sentSubmitBtn').innerText = "確認修改";
+            document.getElementById('sentCancelBtn').classList.remove('hidden');
+            document.getElementById('page-admin').scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        async function deleteSentence(idx) {
+            if (!confirm('確定刪除？')) return;
+            const removed = sentences.splice(idx, 1)[0];
+            saveToLocalStore();
+            // 非同步清理孤立圖片（不阻塞 UI）
+            gcOrphanImages();
+            init();
+        }
+
+        function inlineUpdateSentence(idx) {
+            const s = sentences[idx];
+            const c = document.getElementById(`inline-chinese-${idx}`).value.trim();
+            const o = document.getElementById(`inline-order-${idx}`).value.trim();
+            const d = document.getElementById(`inline-distractors-${idx}`).value.trim();
+            const b = document.getElementById(`inline-book-${idx}`).value;
+            const u = document.getElementById(`inline-unit-${idx}`).value;
+
+            if(!c || !o) { alert("內容不能為空！"); return; }
+
+            s.chinese = c;
+            s.signOrders = o.split('|').map(str => str.trim().split(/\s+/)).filter(arr => arr.length > 0 && arr[0] !== "");
+            s.distractors = d ? d.split(/\s+/) : [];
+            s.book = b; s.unit = u;
+
+            saveToLocalStore();
+            init();
+            alert("✨ 題目已成功儲存！");
+        }
+
+        function updateInlineUnits(idx) {
+            const b = document.getElementById(`inline-book-${idx}`).value;
+            const uSelect = document.getElementById(`inline-unit-${idx}`);
+            if(!b || !bookUnitData[b]) {
+                uSelect.innerHTML = '<option value="">--未選擇--</option>';
+                return;
+            }
+            uSelect.innerHTML = bookUnitData[b].map(u => `<option value="${u}">${u}</option>`).join('');
+        }
+
+        function toggleSentenceEnable(idx, isChecked) {
+            sentences[idx].enabled = isChecked;
+            saveToLocalStore();
+            renderSelectAndFilters();
+        }
+
+        function toggleGroupAll(indicesString, checkState) {
+            indicesString.split(',').map(Number).forEach(idx => { sentences[idx].enabled = checkState; });
+            saveToLocalStore();
+            init();
+        }
+
+        function resetSentForm() {
+            editSentIdx = -1; currentEditingImages = [];
+            document.getElementById('sentChinese').value = '';
+            document.getElementById('sentImageUrls').value = ''; 
+            document.getElementById('sentOrder').value = '';
+            document.getElementById('sentDistractors').value = '';
+            document.getElementById('formBookSelect').value = '';
+            document.getElementById('formUnitSelect').innerHTML = '<option value="">--未選擇單元--</option>';
+            document.getElementById('sentSubmitBtn').innerText = "儲存教材";
+            document.getElementById('sentCancelBtn').classList.add('hidden');
+            document.getElementById('localFile').value = '';
+            renderImagePreviewList();
+        }
+
+        function updateFormUnits() {
+            const book = document.getElementById('formBookSelect').value;
+            const unitSelect = document.getElementById('formUnitSelect');
+            if(!book || !bookUnitData[book]) {
+                unitSelect.innerHTML = '<option value="">--未選擇單元--</option>';
+                return;
+            }
+            unitSelect.innerHTML = '<option value="">--請選擇單元--</option>' + bookUnitData[book].map(u => `<option value="${u}">${u}</option>`).join('');
+        }
+
+        function updateFilterUnits() {
+            const book = document.getElementById('filterBook').value;
+            const unitSelect = document.getElementById('filterUnit');
+            if(!book || !bookUnitData[book]) {
+                unitSelect.innerHTML = '<option value="">全部單元</option>';
+                return;
+            }
+            unitSelect.innerHTML = '<option value="">全部單元</option>' + bookUnitData[book].map(u => `<option value="${u}">${u}</option>`).join('');
+        }
+
+        function loadSentence() {
+            const idx = document.getElementById('sentenceSelect').value;
+            if (idx === "") { document.getElementById('gameZone').classList.add('hidden'); return; }
+            const q = sentences[idx];
+            isUnlocked = false;
+            document.getElementById('gameZone').classList.remove('hidden');
+            document.getElementById('targetChinese').innerText = q.chinese;
+
+            const feedbackEl = document.getElementById('resultFeedback');
+            if (feedbackEl) feedbackEl.classList.add('hidden');
+            const editPanel = document.getElementById('playEditPanel');
+            if (editPanel) editPanel.classList.add('hidden');
+            
+            currentPlayImgList = q.images && q.images.length > 0 ? q.images : (q.image ? [q.image] : []);
+            currentPlayImgIdx = 0;
+            
+            const imgArea = document.getElementById('imageArea');
+            if (currentPlayImgList.length > 0) {
+                imgArea.classList.remove('hidden');
+                showCurrentImage();
+            } else {
+                imgArea.classList.add('hidden');
+            }
+            renderGame(q);
+        }
+
+        // ===== 練習頁：在圖片下方直接修改題目文字與圖片 =====
+        function togglePlayEdit() {
+            const idx = document.getElementById('sentenceSelect').value;
+            if (idx === "") return;
+            const panel = document.getElementById('playEditPanel');
+            if (!panel) return;
+            const isHidden = panel.classList.contains('hidden');
+            if (isHidden) {
+                panel.classList.remove('hidden');
+                document.getElementById('playEditChinese').value = sentences[idx].chinese;
+                renderPlayImageThumbs(idx);
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        function showPlayEditMsg(text) {
+            const el = document.getElementById('playEditMsg');
+            if (!el) return;
+            el.textContent = text;
+            el.classList.remove('hidden');
+            clearTimeout(showPlayEditMsg._t);
+            showPlayEditMsg._t = setTimeout(() => el.classList.add('hidden'), 2200);
+        }
+
+        function savePlayChineseEdit() {
+            const idx = document.getElementById('sentenceSelect').value;
+            if (idx === "") return;
+            const val = document.getElementById('playEditChinese').value.trim();
+            if (!val) { alert('題目文字不可空白！'); return; }
+            sentences[idx].chinese = val;
+            document.getElementById('targetChinese').innerText = val;
+            saveToLocalStore();
+            showPlayEditMsg('✅ 已儲存題目文字，資料已同步雲端');
+        }
+
+        async function renderPlayImageThumbs(idx) {
+            const container = document.getElementById('playImgList');
+            const s = sentences[idx];
+            if (!container || !s) return;
+            const imgs = s.images || [];
+
+            if (imgs.length === 0) {
+                container.innerHTML = '<span class="text-[11px] text-slate-300 m-auto">尚未加入圖片</span>';
+                return;
+            }
+
+            container.innerHTML = imgs.map((_, i) => `
+                <div class="relative w-16 h-16 border rounded bg-white overflow-hidden shadow-sm flex items-center justify-center">
+                    <img id="play-img-thumb-${i}" class="max-w-full max-h-full object-cover" src="">
+                    <button onclick="removePlayImage(${i})" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center font-bold rounded-bl hover:bg-red-600">✕</button>
+                </div>
+            `).join('');
+
+            for (let i = 0; i < imgs.length; i++) {
+                const src = await resolveImgSrc(imgs[i]);
+                const el = document.getElementById(`play-img-thumb-${i}`);
+                if (el && src) el.src = src;
+            }
+        }
+
+        async function handlePlayFileUpload(event) {
+            const idx = document.getElementById('sentenceSelect').value;
+            const files = event.target.files;
+            const s = sentences[idx];
+            if (idx === "" || !files || files.length === 0 || !s) return;
+            if (!s.images) s.images = [];
+
+            for (let i = 0; i < files.length; i++) {
+                try {
+                    const idbKey = await compressAndStoreImageFile(files[i]);
+                    s.images.push(idbKey);
+                } catch (error) {
+                    console.error("圖片處理失敗:", error);
+                }
+            }
+            s.image = s.images[0] || "";
+
+            saveToLocalStore();
+            event.target.value = "";
+            refreshPlayImagesAfterEdit(idx);
+            showPlayEditMsg('✅ 已新增圖片，資料已同步雲端');
+        }
+
+        // 練習頁：直接貼上圖片網址新增（不需上傳檔案）
+        function handlePlayUrlAdd() {
+            const idx = document.getElementById('sentenceSelect').value;
+            const input = document.getElementById('playImgUrl');
+            const s = sentences[idx];
+            if (idx === "" || !input || !s) return;
+
+            const raw = input.value.trim();
+            if (!raw) return;
+            const urls = raw.split(/[\n,]+/).map(u => u.trim()).filter(u => u !== "");
+            if (urls.length === 0) return;
+
+            if (!s.images) s.images = [];
+            s.images.push(...urls);
+            s.image = s.images[0] || "";
+            input.value = "";
+
+            saveToLocalStore();
+            refreshPlayImagesAfterEdit(idx);
+            showPlayEditMsg('✅ 已加入網址圖片，資料已同步雲端');
+        }
+
+        async function removePlayImage(imgArrIdx) {
+            const idx = document.getElementById('sentenceSelect').value;
+            const s = sentences[idx];
+            if (idx === "" || !s || !s.images) return;
+            if (!confirm('確定要刪除這張圖片嗎？')) return;
+
+            s.images.splice(imgArrIdx, 1);
+            s.image = s.images[0] || "";
+
+            saveToLocalStore();
+            gcOrphanImages();
+            refreshPlayImagesAfterEdit(idx);
+            showPlayEditMsg('🗑️ 已刪除圖片');
+        }
+
+        // 圖片新增/刪除後，同步刷新目前作答畫面正在顯示的大圖與縮圖清單
+        function refreshPlayImagesAfterEdit(idx) {
+            const s = sentences[idx];
+            if (!s) return;
+            currentPlayImgList = s.images && s.images.length > 0 ? s.images : (s.image ? [s.image] : []);
+            if (currentPlayImgIdx >= currentPlayImgList.length) {
+                currentPlayImgIdx = Math.max(0, currentPlayImgList.length - 1);
+            }
+            const imgArea = document.getElementById('imageArea');
+            if (currentPlayImgList.length > 0) {
+                imgArea.classList.remove('hidden');
+                showCurrentImage();
+            } else {
+                imgArea.classList.add('hidden');
+            }
+            renderPlayImageThumbs(idx);
+        }
+
+        async function showCurrentImage() {
+            const imgTag = document.getElementById('targetImage');
+            const counter = document.getElementById('imageCounter');
+            const prevBtn = document.getElementById('prevImgBtn');
+            const nextBtn = document.getElementById('nextImgBtn');
+
+            imgTag.src = '';
+            const src = await resolveImgSrc(currentPlayImgList[currentPlayImgIdx]);
+            if (src) imgTag.src = src;
+            counter.innerText = `圖片： ${currentPlayImgIdx + 1} / ${currentPlayImgList.length}`;
+
+            if (currentPlayImgList.length > 1) {
+                prevBtn.classList.remove('hidden'); nextBtn.classList.remove('hidden');
+            } else {
+                prevBtn.classList.add('hidden'); nextBtn.classList.add('hidden');
+            }
+        }
+
+        function changeImage(dir) {
+            currentPlayImgIdx += dir;
+            if (currentPlayImgIdx < 0) currentPlayImgIdx = currentPlayImgList.length - 1; 
+            else if (currentPlayImgIdx >= currentPlayImgList.length) currentPlayImgIdx = 0; 
+            showCurrentImage();
+        }
+
+        let currentDistractors = [];
+
+        function renderGame(q) {
+            const targetOrder = q.signOrders ? q.signOrders[0] : (q.signOrder || []);
+
+            document.getElementById('dropZone').innerHTML = targetOrder.map((_, i) => 
+                `<div class="slot" id="slot-${i}" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event, ${i})">待填入</div>`
+            ).join('');
+
+            currentDistractors = (q.distractors && Array.isArray(q.distractors)) ? q.distractors.filter(w => w && w.trim() !== '') : [];
+
+            let baseWords = [];
+            if(q.signOrders) {
+                q.signOrders.forEach(arr => { arr.forEach(w => { if(!baseWords.includes(w)) baseWords.push(w); })});
+            }
+
+            const allItems = [
+                ...baseWords.map(w => ({ w })),
+                ...currentDistractors.map(w => ({ w }))
+            ].map((item, i) => ({ ...item, poolIdx: i })).sort(() => Math.random() - 0.5);
+
+            const pool = document.getElementById('cardPool');
+            pool.innerHTML = '';
+            allItems.forEach(({ w, poolIdx }) => {
+                const card = document.createElement('div');
+                card.id = `pool-btn-${poolIdx}`;
+                card.dataset.poolIdx = String(poolIdx);
+                card.draggable = true;
+                card.textContent = w;
+                card.className = 'pool-word-card bg-white px-5 py-3 rounded-xl font-bold border-b-4 border-slate-200 hover:bg-violet-50 hover:border-violet-300 transition shadow-sm text-slate-700 cursor-grab select-none';
+                card.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', w);
+                    e.dataTransfer.setData('fromSlotIdx', '');
+                    e.dataTransfer.setData('poolIdx', String(poolIdx));
+                    card.style.opacity = '0.4';
+                });
+                card.addEventListener('dragend', () => { card.style.opacity = '1'; });
+                card.addEventListener('click', () => {
+                    const slots = document.querySelectorAll('.slot');
+                    for (let s of slots) {
+                        if (s.innerText === '待填入') {
+                            placeWordInSlot(s, w, poolIdx);
+                            card.style.display = 'none';
+                            checkResult(); return;
+                        }
+                    }
+                });
+                pool.appendChild(card);
+            });
+        }
+
+        function placeWordInSlot(slot, w, poolIdx) {
+            slot.innerText = w; slot.classList.add('filled');
+            slot.setAttribute('draggable', 'true');
+            slot.dataset.poolIdx = String(poolIdx);
+            slot.ondragstart = (e) => {
+                e.dataTransfer.setData("text/plain", slot.innerText);
+                e.dataTransfer.setData("fromSlotIdx", slot.id.split('-')[1]);
+                e.dataTransfer.setData("poolIdx", slot.dataset.poolIdx || "");
+            };
+        }
+
+        function handleDrop(e, targetIdx) {
+            e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+            const text = e.dataTransfer.getData("text/plain"); 
+            const fromSlotIdx = e.dataTransfer.getData("fromSlotIdx");
+            const targetSlot = document.getElementById(`slot-${targetIdx}`);
+            const oldText = targetSlot.innerText;
+            const oldPoolIdx = targetSlot.dataset.poolIdx;
+
+            if (fromSlotIdx !== "") { 
+                const fromSlot = document.getElementById(`slot-${fromSlotIdx}`);
+                const tempPoolIdx = fromSlot.dataset.poolIdx;
+
+                targetSlot.innerText = text; targetSlot.dataset.poolIdx = tempPoolIdx;
+                fromSlot.innerText = oldText === "待填入" ? "待填入" : oldText;
+                fromSlot.dataset.poolIdx = oldPoolIdx || "";
+
+                if (oldText === "待填入") {
+                    fromSlot.classList.remove('filled', 'unlocked');
+                    fromSlot.removeAttribute('draggable'); delete fromSlot.dataset.poolIdx;
+                } else {
+                    fromSlot.setAttribute('draggable', 'true');
+                }
+                targetSlot.classList.add('filled'); targetSlot.setAttribute('draggable', 'true');
+            } else {
+                const poolIdx = e.dataTransfer.getData("poolIdx");
+                if (poolIdx !== "") {
+                    const poolCard = document.getElementById("pool-btn-" + poolIdx);
+                    if (oldText && oldText !== "待填入" && targetSlot.dataset.poolIdx) {
+                        const oldCard = document.getElementById("pool-btn-" + targetSlot.dataset.poolIdx);
+                        if (oldCard) oldCard.style.display = "";
+                    }
+                    placeWordInSlot(targetSlot, text, poolIdx);
+                    if (poolCard) poolCard.style.display = "none";
+                }
+            }
+            checkResult();
+        }
+
+        function handleReturnToPool(e) {
+            e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+            const fromSlotIdx = e.dataTransfer.getData("fromSlotIdx");
+            const poolIdx = e.dataTransfer.getData("poolIdx");
+
+            if (fromSlotIdx !== "") {
+                const fromSlot = document.getElementById(`slot-${fromSlotIdx}`);
+                fromSlot.innerText = "待填入"; fromSlot.classList.remove('filled', 'unlocked');
+                fromSlot.removeAttribute('draggable'); delete fromSlot.dataset.poolIdx;
+                
+                const btn = document.getElementById(`pool-btn-${poolIdx}`);
+                if (btn) btn.style.display = '';
+                checkResult();
+            }
+        }
+
+        function checkResult() {
+            const idx = document.getElementById('sentenceSelect').value;
+            if (idx === "") return;
+            const q = sentences[idx];
+            const slots = Array.from(document.querySelectorAll('.slot'));
+            const current = slots.map(s => s.innerText);
+            const feedback = document.getElementById('resultFeedback');
+
+            if (!current.every(t => t !== "待填入")) {
+                if (feedback) feedback.classList.add('hidden');
+                return;
+            }
+
+            const isCorrect = q.signOrders && q.signOrders.some(ansArr => JSON.stringify(current) === JSON.stringify(ansArr));
+
+            if (isCorrect) {
+                if (!isUnlocked) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                isUnlocked = true;
+                slots.forEach(s => { s.classList.remove('shake-sad'); s.classList.add('unlocked'); });
+                if (feedback) {
+                    feedback.textContent = '🎉 答對了，太棒了！';
+                    feedback.className = 'text-2xl font-bold mb-4 text-emerald-600';
+                    feedback.classList.remove('hidden');
+                }
+            } else {
+                // 答錯：顯示悲傷表情並讓格子輕輕搖晃，鼓勵再試一次
+                slots.forEach(s => {
+                    s.classList.add('shake-sad');
+                    setTimeout(() => s.classList.remove('shake-sad'), 500);
+                });
+                if (feedback) {
+                    feedback.textContent = '😢 不太對喔，再排排看！';
+                    feedback.className = 'text-2xl font-bold mb-4 text-rose-500';
+                    feedback.classList.remove('hidden');
+                }
+            }
+        }
+
+        function toggleGroupCollapse(id) {
+            const target = document.getElementById(id);
+            const arrow = document.getElementById('arrow-' + id);
+            if (target && arrow) {
+                target.classList.toggle('hidden');
+                arrow.innerText = target.classList.contains('hidden') ? '▶' : '▼';
+            }
+        }
+
+        function init() { 
+            renderSelectAndFilters(); 
+            renderAdmin(); 
+
+            document.getElementById('bookOptions').innerHTML = Object.keys(bookUnitData).map(book => `<option value="${book}">`).join('');
+            
+            const formBookSelect = document.getElementById('formBookSelect');
+            const currentFormBook = formBookSelect.value;
+            formBookSelect.innerHTML = '<option value="">--未選擇冊別--</option>' + Object.keys(bookUnitData).map(book => `<option value="${book}">${book}</option>`).join('');
+            if(currentFormBook && bookUnitData[currentFormBook]) formBookSelect.value = currentFormBook;
+        }
+
+        function renderSelectAndFilters() { 
+            document.getElementById('sentenceSelect').innerHTML = '<option value="">🔍 請選擇題目...</option>' + sentences.map((s, i) => s.enabled !== false ? `<option value="${i}">${s.chinese}</option>` : '').join(''); 
+            
+            const filterBook = document.getElementById('filterBook');
+            const lastSelectedBook = filterBook.value;
+            filterBook.innerHTML = '<option value="">全部冊別</option>' + Object.keys(bookUnitData).map(book => `<option value="${book}">${book}</option>`).join('');
+            if(lastSelectedBook && bookUnitData[lastSelectedBook]) filterBook.value = lastSelectedBook;
+
+            renderGallery();
+        }
+
+        async function renderGallery() {
+            const grid = document.getElementById('galleryGrid');
+            const hint = document.getElementById('emptyHint');
+            const selBook = document.getElementById('filterBook').value;
+            const selUnit = document.getElementById('filterUnit').value;
+
+            const filtered = sentences.map((s, idx) => ({...s, originalIdx: idx})).filter(s => {
+                if(s.enabled === false) return false;
+                if(selBook && s.book !== selBook) return false;
+                if(selUnit && s.unit !== selUnit) return false;
+                return true;
+            });
+
+            if (!filtered.length) {
+                grid.innerHTML = ''; hint.classList.remove('hidden'); return;
+            }
+            hint.classList.add('hidden');
+
+            // 先用佔位符渲染骨架
+            grid.innerHTML = filtered.map((s, i) => {
+                const hasImg = s.images && s.images.length > 0;
+                return `
+                <div class="gallery-card relative" onclick="selectFromGallery(${s.originalIdx})">
+                    ${s.images && s.images.length > 1 ? `<span class="absolute top-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">📚 ${s.images.length}張圖</span>` : ''}
+                    ${hasImg
+                        ? `<img id="gallery-img-${i}" src="" alt="${s.chinese}" style="width:100%;height:160px;object-fit:cover;"><div class="no-img" style="display:none">🤟</div>`
+                        : `<div class="no-img">🤟</div>`}
+                    <div class="card-label">
+                        <div class="text-xs text-cyan-600 font-medium">${s.book || '未選'} - ${s.unit || '未選'}</div>
+                        <div class="truncate">${s.chinese}</div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // 非同步填入縮圖
+            for (let i = 0; i < filtered.length; i++) {
+                const s = filtered[i];
+                const coverRef = s.images && s.images.length > 0 ? s.images[0] : (s.image || null);
+                if (!coverRef) continue;
+                const imgEl = document.getElementById(`gallery-img-${i}`);
+                if (!imgEl) continue;
+                const src = await resolveImgSrc(coverRef);
+                if (src) imgEl.src = src;
+            }
+        }
+
+        function selectFromGallery(idx) {
+            document.getElementById('sentenceSelect').value = idx;
+            document.getElementById('sentenceGallery').classList.add('hidden');
+            loadSentence();
+        }
+
+        function returnToGallery() {
+            document.getElementById('gameZone').classList.add('hidden');
+            document.getElementById('sentenceGallery').classList.remove('hidden');
+        }
+
+        function renderAdmin() { 
+            const groups = {};
+            sentences.forEach((s, i) => {
+                const b = s.book || "未定冊別"; const u = s.unit || "未定單元";
+                if (!groups[b]) groups[b] = {}; if (!groups[b][u]) groups[b][u] = [];
+                groups[b][u].push({ ...s, idx: i });
+            });
+
+            const totalCountEl = document.getElementById('totalSentenceCount');
+            if (totalCountEl) totalCountEl.textContent = `總題數：${sentences.length}`;
+
+            const listContainer = document.getElementById('sentList');
+            if (sentences.length === 0) {
+                listContainer.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">目前沒有任何句型教材。</p>'; return;
+            }
+
+            let html = ''; let groupIdCounter = 0;
+            Object.entries(groups).forEach(([book, units]) => {
+                Object.entries(units).forEach(([unit, list]) => {
+                    const elementId = `group-admin-list-${groupIdCounter++}`;
+                    html += `
+                    <div class="bg-slate-100 border border-slate-200 rounded-xl overflow-hidden mb-2">
+                        <div class="flex justify-between items-center bg-slate-200/70 px-4 py-2.5 font-bold text-sm text-slate-700 select-none">
+                            <div onclick="toggleGroupCollapse('${elementId}')" class="flex items-center gap-2 cursor-pointer hover:text-slate-900 transition flex-1">
+                                <span class="text-xs bg-cyan-600 text-white px-2 py-0.5 rounded shadow-sm">${book}</span>
+                                <span class="text-xs bg-purple-600 text-white px-2 py-0.5 rounded shadow-sm">${unit}</span>
+                                <span class="text-[11px] text-slate-500 font-normal">（共 ${list.length} 題）</span>
+                                <span id="arrow-${elementId}" class="text-slate-500 text-xs ml-1">▼</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs font-normal">
+                                <button onclick="toggleGroupAll('${list.map(item => item.idx).join(',')}', true)" class="text-cyan-600 hover:underline">全選</button>
+                                <button onclick="toggleGroupAll('${list.map(item => item.idx).join(',')}', false)" class="text-slate-500 hover:underline">全不選</button>
+                                <button data-idxs="${list.map(item => item.idx).join(',')}" data-book="${escAttr(book)}" data-unit="${escAttr(unit)}" onclick="deleteUnitGroup(this)" class="text-red-500 hover:underline font-bold">🗑️ 刪除整單元</button>
+                            </div>
+                        </div>
+                        <div id="${elementId}" class="p-2 space-y-3 bg-white drag-zone-container">`;
+
+                    list.forEach((s, listPos) => {
+                        const orderStr = s.signOrders ? s.signOrders.map(arr => arr.join(' ')).join(' | ') : '';
+                        const hasImg = (s.images && s.images.length > 0) || s.image;
+                        const imgCount = s.images ? s.images.length : (s.image ? 1 : 0);
+                        html += `
+                        <div class="draggable-item bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs shadow-sm space-y-2 cursor-move" draggable="true" data-index="${s.idx}">
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="flex items-center gap-2 flex-1 min-w-0">
+                                    <input type="checkbox" ${s.enabled !== false ? 'checked' : ''} onchange="toggleSentenceEnable(${s.idx}, this.checked)" class="w-4 h-4 rounded text-cyan-600 cursor-pointer shrink-0">
+                                    <span class="shrink-0 bg-slate-300 text-slate-700 text-[10px] font-bold px-1.5 py-0.5 rounded">No.${listPos + 1}</span>
+                                    <div class="relative w-9 h-9 shrink-0 rounded overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+                                        ${hasImg ? `<img id="card-thumb-${s.idx}" class="w-full h-full object-cover" src="">` : `<span class="text-sm">🤟</span>`}
+                                        ${imgCount > 1 ? `<span class="absolute bottom-0 right-0 bg-black/60 text-white text-[8px] px-1 rounded-tl font-bold">×${imgCount}</span>` : ''}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <b class="text-slate-800 text-sm block truncate">${s.chinese}</b>
+                                        <span class="text-[10px] text-slate-400 block truncate">語序：${orderStr || '（尚未設定）'}</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 font-bold whitespace-nowrap">
+                                    <button onclick="toggleSentenceDetail(${s.idx})" class="text-cyan-600">✏️ 修改</button>
+                                    <button onclick="deleteSentence(${s.idx})" class="text-red-400">刪除</button>
+                                </div>
+                            </div>
+                            <div id="detail-${s.idx}" class="hidden space-y-2">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1 border-t cursor-default" onclick="event.stopPropagation();">
+                                    <div>
+                                        <label class="block text-[10px] text-slate-400 font-bold">中文例句</label>
+                                        <input type="text" id="inline-chinese-${s.idx}" value="${s.chinese}" class="w-full p-1 border rounded bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] text-slate-400 font-bold">正確語序 (空格隔開，多組用 | )</label>
+                                        <input type="text" id="inline-order-${s.idx}" value="${orderStr}" class="w-full p-1 border rounded bg-white font-medium text-purple-700">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] text-slate-400 font-bold">額外干擾詞 (空格隔開)</label>
+                                        <input type="text" id="inline-distractors-${s.idx}" value="${(s.distractors || []).join(' ')}" class="w-full p-1 border rounded bg-white text-amber-600">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-1">
+                                        <div>
+                                            <label class="block text-[10px] text-slate-400 font-bold">冊別</label>
+                                            <select id="inline-book-${s.idx}" onchange="updateInlineUnits(${s.idx})" class="w-full p-1 border rounded bg-white">
+                                                ${Object.keys(bookUnitData).map(b => `<option value="${b}" ${b===s.book?'selected':''}>${b}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] text-slate-400 font-bold">單元</label>
+                                            <select id="inline-unit-${s.idx}" class="w-full p-1 border rounded bg-white">
+                                                ${(bookUnitData[s.book] || []).map(u => `<option value="${u}" ${u===s.unit?'selected':''}>${u}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pt-1 border-t cursor-default" onclick="event.stopPropagation();">
+                                    <label class="block text-[10px] text-slate-400 font-bold mb-1">🖼️ 圖片管理（可直接新增／刪除，本卡片內即時生效）</label>
+                                    <div id="inline-img-list-${s.idx}" class="flex flex-wrap gap-2 mb-2 min-h-[48px] p-1 bg-slate-50 rounded border border-dashed border-slate-200">
+                                        <span class="text-[10px] text-slate-300 m-auto">載入中...</span>
+                                    </div>
+                                    <input type="file" accept="image/*" multiple onchange="handleInlineFileUpload(event, ${s.idx})" class="text-[10px] w-full bg-white p-1 rounded border mb-1">
+                                    <div class="flex gap-1">
+                                        <input type="text" id="inline-imgurl-${s.idx}" placeholder="或貼上圖片網址（多個網址可用逗號/換行分隔）" class="flex-1 text-[10px] p-1.5 border rounded bg-white">
+                                        <button onclick="handleInlineUrlAdd(${s.idx})" class="text-[10px] bg-cyan-600 text-white px-2 rounded font-bold whitespace-nowrap">➕ 加入</button>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end pt-1" onclick="event.stopPropagation();">
+                                    <button onclick="inlineUpdateSentence(${s.idx})" class="bg-slate-700 text-white px-3 py-0.5 rounded text-[11px]">💾 儲存修改</button>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                    html += `</div></div>`;
+                });
+            });
+            listContainer.innerHTML = html;
+            enableDragAndDropSort();
+            renderCardThumbnails();
+
+            document.getElementById('bookUnitListAdmin').innerHTML = Object.entries(bookUnitData).map(([book, units]) => `
+                <div class="border-t pt-2 mt-2" id="bu-block-${idSafe(book)}">
+                    <div class="flex justify-between items-center mb-1">
+                        <p class="text-purple-600 text-xs font-bold">${book}</p>
+                        <button onclick="if(confirm('確定刪除整冊嗎？')){delete bookUnitData['${book}']; saveToLocalStore(); init();}" class="text-[10px] text-red-400">刪除整冊</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        ${units.map((unit, i) => `<span id="bu-chip-${idSafe(book)}-${idSafe(unit)}" class="bg-white border px-2 py-1 rounded text-xs flex items-center gap-1 transition-colors duration-500">${unit}<b class="cursor-pointer text-red-300 hover:text-red-500" onclick="bookUnitData['${book}'].splice(${i},1); if(bookUnitData['${book}'].length===0){delete bookUnitData['${book}'];} saveToLocalStore(); init();">✕</b></span>`).join('')}
+                    </div>
+                </div>`).join('');
+
+            renderBookUnitMsg();
+        }
+
+        // 摘要列縮圖：非同步載入每張題目卡片的第一張圖片，讓已儲存的題目一目了然（不用展開就能看到）
+        function renderCardThumbnails() {
+            sentences.forEach((s, i) => {
+                const ref = (s.images && s.images.length > 0) ? s.images[0] : (s.image || null);
+                if (!ref) return;
+                const el = document.getElementById(`card-thumb-${i}`);
+                if (!el) return;
+                resolveImgSrc(ref).then(src => {
+                    if (src && el.isConnected) el.src = src;
+                });
+            });
+        }
+
+        // ===== 題目卡片內：直接管理圖片（新增/刪除，不需捲到最上方表單）=====
+        // 按「✏️ 修改」才展開該題完整的題目、答案(語序)、干擾詞、冊別/單元與圖片編輯區；再按一次收合
+        function toggleSentenceDetail(idx) {
+            const detail = document.getElementById(`detail-${idx}`);
+            if (!detail) return;
+            const isHidden = detail.classList.contains('hidden');
+            if (isHidden) {
+                detail.classList.remove('hidden');
+                renderInlineImages(idx); // 展開當下才載入圖片，避免一次載入全部題目的圖片拖慢畫面
+            } else {
+                detail.classList.add('hidden');
+            }
+        }
+
+        async function renderAllInlineImagePreviews() {
+            const items = document.querySelectorAll('#sentList .draggable-item[data-index]');
+            items.forEach(item => {
+                const idx = parseInt(item.getAttribute('data-index'));
+                if (!isNaN(idx)) renderInlineImages(idx);
+            });
+        }
+
+        async function renderInlineImages(idx) {
+            const container = document.getElementById(`inline-img-list-${idx}`);
+            const s = sentences[idx];
+            if (!container || !s) return;
+            const imgs = s.images || [];
+
+            if (imgs.length === 0) {
+                container.innerHTML = '<span class="text-[10px] text-slate-300 m-auto">尚未加入圖片</span>';
+                return;
+            }
+
+            container.innerHTML = imgs.map((_, i) => `
+                <div class="relative w-14 h-14 border rounded bg-white overflow-hidden shadow-sm flex items-center justify-center">
+                    <img id="inline-img-${idx}-${i}" class="max-w-full max-h-full object-cover" src="">
+                    <button onclick="removeInlineImage(${idx}, ${i})" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center font-bold rounded-bl hover:bg-red-600">✕</button>
+                </div>
+            `).join('');
+
+            for (let i = 0; i < imgs.length; i++) {
+                const src = await resolveImgSrc(imgs[i]);
+                const el = document.getElementById(`inline-img-${idx}-${i}`);
+                if (el && src) el.src = src;
+            }
+        }
+
+        // 直接於卡片內上傳新圖片（自動壓縮並存入 IndexedDB，即時生效）
+        // 共用：壓縮圖片並存入 IndexedDB，回傳 idb: 開頭的引用 key
+        function compressAndStoreImageFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = async function() {
+                        const MAX_WIDTH = 1024;
+                        const MAX_HEIGHT = 1024;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        } else {
+                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width; canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        const base64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                        try {
+                            const key = genImgKey();
+                            await saveImgToDB(key.replace('idb:', ''), base64);
+                            resolve(key);
+                        } catch (err) { reject(err); }
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleInlineFileUpload(event, idx) {
+            const files = event.target.files;
+            const s = sentences[idx];
+            if (!files || files.length === 0 || !s) return;
+            if (!s.images) s.images = [];
+
+            for (let i = 0; i < files.length; i++) {
+                try {
+                    const idbKey = await compressAndStoreImageFile(files[i]);
+                    s.images.push(idbKey);
+                } catch (error) {
+                    console.error("圖片處理失敗:", error);
+                }
+            }
+            s.image = s.images[0] || "";
+
+            saveToLocalStore();
+            renderInlineImages(idx);
+            event.target.value = "";
+        }
+
+        // 題目卡片：直接貼上圖片網址新增（不需上傳檔案）
+        function handleInlineUrlAdd(idx) {
+            const input = document.getElementById(`inline-imgurl-${idx}`);
+            const s = sentences[idx];
+            if (!input || !s) return;
+
+            const raw = input.value.trim();
+            if (!raw) return;
+            const urls = raw.split(/[\n,]+/).map(u => u.trim()).filter(u => u !== "");
+            if (urls.length === 0) return;
+
+            if (!s.images) s.images = [];
+            s.images.push(...urls);
+            s.image = s.images[0] || "";
+            input.value = "";
+
+            saveToLocalStore();
+            renderInlineImages(idx);
+        }
+
+        // 直接於卡片內刪除指定圖片
+        async function removeInlineImage(idx, imgArrIdx) {
+            const s = sentences[idx];
+            if (!s || !s.images) return;
+            if (!confirm('確定要刪除這張圖片嗎？')) return;
+
+            s.images.splice(imgArrIdx, 1);
+            s.image = s.images[0] || "";
+
+            saveToLocalStore();
+            gcOrphanImages();
+            renderInlineImages(idx);
+        }
+
+        // 刪除整個單元底下的所有題目（保留冊別/單元清單本身，僅清空該單元題目）
+        function deleteUnitGroup(btn) {
+            const idxs = (btn.dataset.idxs || '').split(',').filter(v => v !== '').map(Number);
+            const book = btn.dataset.book;
+            const unit = btn.dataset.unit;
+            if (idxs.length === 0) return;
+
+            if (!confirm(`確定要刪除「${book} - ${unit}」整個單元的所有題目嗎？\n（共 ${idxs.length} 筆，此動作無法復原，建議先備份）`)) return;
+
+            const idxSet = new Set(idxs);
+            sentences = sentences.filter((s, i) => !idxSet.has(i));
+
+            saveToLocalStore();
+            gcOrphanImages();
+            init();
+        }
+
+        function enableDragAndDropSort() {
+            const containers = document.querySelectorAll('.drag-zone-container');
+            containers.forEach(container => {
+                container.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    const afterElement = getDragAfterElement(container, e.clientY);
+                    const draggingItem = document.querySelector('.draggable-item.dragging');
+                    if (!draggingItem) return;
+                    if (afterElement == null) container.appendChild(draggingItem);
+                    else container.insertBefore(draggingItem, afterElement);
+                });
+            });
+
+            document.querySelectorAll('.draggable-item').forEach(draggable => {
+                draggable.addEventListener('dragstart', (e) => {
+                    if (['INPUT', 'SELECT', 'BUTTON', 'TEXTAREA'].includes(e.target.tagName)) { e.preventDefault(); return; }
+                    draggable.classList.add('dragging');
+                });
+                draggable.addEventListener('dragend', async () => {
+                    draggable.classList.remove('dragging');
+                    const allRenderedItems = document.querySelectorAll('.draggable-item');
+                    const newOrderedSentences = [];
+                    allRenderedItems.forEach(item => {
+                        newOrderedSentences.push(sentences[parseInt(item.getAttribute('data-index'))]);
+                    });
+                    sentences.forEach(s => { if (!newOrderedSentences.includes(s)) newOrderedSentences.push(s); });
+                    sentences = newOrderedSentences;
+                    saveToLocalStore(); init();
+                });
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.draggable-item:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+                else return closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function switchTab(t) {
+            document.getElementById('page-learn').classList.toggle('hidden', t !== 'learn');
+            document.getElementById('page-admin').classList.toggle('hidden', t !== 'admin');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id.includes(t)));
+            if(t === 'learn') renderSelectAndFilters();
+            if(t === 'admin') runDiagnostic();
+        }
+
+        // 啟動：先載本機，再背景比對雲端是否有更新版本
+        bootStrap();
+    </script>
+</body>
+</html>
