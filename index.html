@@ -259,8 +259,8 @@
 
                         <div class="p-3 rounded-lg border border-dashed border-cyan-300 bg-cyan-50/50">
                             <p class="text-xs text-cyan-800 font-bold mb-1">✍️ 正確語序（可輸入多組答案）</p>
-                            <p class="text-xs text-slate-500 mb-2">單字之間用<b>空格</b>隔開。多組答案請用<b>豎線 (|)</b> 隔開。</p>
-                            <input type="text" id="sentOrder" placeholder="正確語序 (多組答案請用豎線 | 隔開)" class="w-full p-3 rounded-lg outline-none border bg-white">
+                            <p class="text-xs text-slate-500 mb-2">單字之間用<b>空格</b>隔開。多組答案請用<b>豎線 (|)</b> 隔開。這部分空格加大，填入答案可較多組。</p>
+                            <textarea id="sentOrder" rows="4" placeholder="正確語序 (多組答案請用豎線 | 隔開，也可換行方便閱讀)" class="w-full p-3 rounded-lg outline-none border bg-white resize-y leading-relaxed"></textarea>
                         </div>
                         <div class="p-3 rounded-lg border border-dashed border-amber-300 bg-amber-50">
                             <p class="text-xs text-amber-700 font-bold mb-1">📝 詞彙池額外單字（干擾詞）</p>
@@ -402,6 +402,11 @@
         // 將字串安全轉為可放入 HTML 屬性的內容（避免冊別/單元名稱含特殊字元破壞屬性）
         function escAttr(str) {
             return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // 將字串安全轉為可放入 HTML 內容（textarea 等標籤之間）的文字，避免 < > & 破壞結構
+        function escHtml(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
         // 將字串轉為可安全當作 HTML id 使用的內容
@@ -1673,7 +1678,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-[10px] text-slate-400 font-bold">正確語序 (空格隔開，多組用 | )</label>
-                                        <input type="text" id="inline-order-${s.idx}" value="${orderStr}" class="w-full p-1 border rounded bg-white font-medium text-purple-700">
+                                        <textarea id="inline-order-${s.idx}" rows="2" class="w-full p-1 border rounded bg-white font-medium text-purple-700 resize-y">${escHtml(orderStr)}</textarea>
                                     </div>
                                     <div>
                                         <label class="block text-[10px] text-slate-400 font-bold">額外干擾詞 (空格隔開)</label>
