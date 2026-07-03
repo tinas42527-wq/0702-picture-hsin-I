@@ -1995,6 +1995,33 @@
             if(t === 'admin') runDiagnostic();
         }
 
+        // 全域功能：左鍵點擊文字輸入框／多行文字框時，自動全選內容方便直接修改
+        // （已聚焦狀態下再次點擊，仍可正常移動游標，不影響一般編輯操作）
+        (function enableSelectAllOnClick() {
+            let selectOnFocusPending = false;
+            document.addEventListener('mousedown', function(e) {
+                const el = e.target;
+                if (el && el.matches && el.matches('input[type="text"], textarea')) {
+                    selectOnFocusPending = (document.activeElement !== el);
+                } else {
+                    selectOnFocusPending = false;
+                }
+            });
+            document.addEventListener('focusin', function(e) {
+                const el = e.target;
+                if (selectOnFocusPending && el && el.matches && el.matches('input[type="text"], textarea')) {
+                    el.select();
+                }
+            });
+            document.addEventListener('mouseup', function(e) {
+                const el = e.target;
+                if (selectOnFocusPending && el && el.matches && el.matches('input[type="text"], textarea')) {
+                    e.preventDefault();
+                }
+                selectOnFocusPending = false;
+            });
+        })();
+
         // 啟動：先載本機，再背景比對雲端是否有更新版本
         bootStrap();
     </script>
