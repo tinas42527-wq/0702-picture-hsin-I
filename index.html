@@ -581,7 +581,7 @@
                 suppressCloudPush = true;
                 sentences = newSentences;
                 bookUnitData = cloudData.bookUnitData || {};
-                sentences.forEach(s => { if (s.enabled === undefined) s.enabled = true; });
+                sentences.forEach(s => { if (s.enabled === undefined) s.enabled = false; });
                 saveToLocalStore();
                 setLocalUpdatedAt(cloudUpdatedAt);
                 suppressCloudPush = false;
@@ -625,7 +625,7 @@
             sentences.forEach(s => {
                 if (s.image && (!s.images || s.images.length === 0)) s.images = [s.image];
                 if (!s.images) s.images = [];
-                if (s.enabled === undefined) s.enabled = true;
+                if (s.enabled === undefined) s.enabled = false;
             });
 
             init();
@@ -778,7 +778,7 @@
                             for (const newS of incomingSentences) {
                                 if(newS.image && (!newS.images || newS.images.length === 0)) newS.images = [newS.image];
                                 if(!newS.images) newS.images = [];
-                                if(newS.enabled === undefined) newS.enabled = true;
+                                if(newS.enabled === undefined) newS.enabled = false;
 
                                 const isDuplicate = sentences.some(oldS =>
                                     oldS.chinese === newS.chinese &&
@@ -869,7 +869,7 @@
                 signOrders: orders, 
                 distractors: d ? d.split(/\s+/) : [],
                 book: b, unit: u,
-                enabled: editSentIdx === -1 ? true : (sentences[editSentIdx].enabled !== undefined ? sentences[editSentIdx].enabled : true)
+                enabled: editSentIdx === -1 ? true : (sentences[editSentIdx].enabled !== undefined ? sentences[editSentIdx].enabled : false)
             };
 
             const isNew = editSentIdx === -1;
@@ -1647,7 +1647,7 @@
                                 <span class="text-xs bg-cyan-600 text-white px-2 py-0.5 rounded shadow-sm">${book}</span>
                                 <span class="text-xs bg-purple-600 text-white px-2 py-0.5 rounded shadow-sm">${unit}</span>
                                 <span class="text-[11px] text-slate-500 font-normal">（共 ${list.length} 題）</span>
-                                <span id="arrow-${elementId}" class="text-slate-500 text-xs ml-1">▼</span>
+                                <span id="arrow-${elementId}" class="text-slate-500 text-xs ml-1">▶</span>
                             </div>
                             <div class="flex items-center gap-2 text-xs font-normal">
                                 <button onclick="toggleGroupAll('${list.map(item => item.idx).join(',')}', true)" class="text-cyan-600 hover:underline">全選</button>
@@ -1655,7 +1655,7 @@
                                 <button data-idxs="${list.map(item => item.idx).join(',')}" data-book="${escAttr(book)}" data-unit="${escAttr(unit)}" onclick="deleteUnitGroup(this)" class="text-red-500 hover:underline font-bold">🗑️ 刪除整單元</button>
                             </div>
                         </div>
-                        <div id="${elementId}" class="p-2 space-y-3 bg-white drag-zone-container">`;
+                        <div id="${elementId}" class="hidden p-2 space-y-3 bg-white drag-zone-container">`;
 
                     list.forEach((s, listPos) => {
                         const orderStr = s.signOrders ? s.signOrders.map(arr => arr.join(' ')).join(' | ') : '';
@@ -1973,3 +1973,4 @@
     </script>
 </body>
 </html>
+
