@@ -133,6 +133,11 @@
                             下一題 →
                         </button>
                     </div>
+                    <div class="mb-4 flex justify-center">
+                        <button onclick="toggleAnswerReveal()" id="btnRevealAnswer" class="flex items-center gap-2 text-sm bg-amber-500 text-white hover:bg-amber-600 transition font-bold px-3 py-1.5 rounded-lg shadow-sm">
+                            👁️ 公布正確答案
+                        </button>
+                    </div>
                     <div class="bg-white p-6 rounded-2xl mb-8 border border-slate-100 shadow-lg">
                         <h2 id="targetChinese" class="text-3xl font-bold text-slate-800 mb-2"></h2>
                         
@@ -172,6 +177,7 @@
 
                     </div>
                     <div id="resultFeedback" class="hidden text-2xl font-bold mb-4"></div>
+                    <div id="answerRevealBox" class="hidden text-sm font-bold text-amber-800 bg-amber-50 border-2 border-dashed border-amber-400 rounded-xl p-3 mb-4 max-w-xl mx-auto"></div>
                     <div id="dropZone" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10"></div>
                     <div id="poolContainer">
                         <p id="poolHint" class="text-xs text-slate-400 font-medium mb-2 text-center">🃏 詞彙池 — 拖曳或點選放入格子，多餘的字不需要放入</p>
@@ -305,6 +311,7 @@
         let bookUnitData = {};
         let isUnlocked = false;
         let wasCorrectLastCheck = false; // 追蹤上一次檢查是否為正確狀態，用來判斷「這次是不是剛答對」
+        let answerRevealed = false; // 是否正在公布正確答案
         let editSentIdx = -1;
 
         let currentEditingImages = []; 
@@ -1139,6 +1146,15 @@
 
             const feedbackEl = document.getElementById('resultFeedback');
             if (feedbackEl) feedbackEl.classList.add('hidden');
+            answerRevealed = false;
+            const revealBox = document.getElementById('answerRevealBox');
+            if (revealBox) revealBox.classList.add('hidden');
+            const revealBtn = document.getElementById('btnRevealAnswer');
+            if (revealBtn) {
+                revealBtn.textContent = '👁️ 公布正確答案';
+                revealBtn.classList.remove('bg-slate-400', 'hover:bg-slate-500');
+                revealBtn.classList.add('bg-amber-500', 'hover:bg-amber-600');
+            }
             const editPanel = document.getElementById('playEditPanel');
             if (editPanel) editPanel.classList.add('hidden');
             
@@ -1473,6 +1489,35 @@
         // 左鍵單擊已填入的格子：同樣把該詞卡退回詞彙池
         function handleSlotLeftClick(idx) {
             returnSlotWordToPool(idx);
+        }
+
+        function toggleAnswerReveal() {
+            const idx = document.getElementById('sentenceSelect').value;
+            if (idx === "") return;
+            const q = sentences[idx];
+            const box = document.getElementById('answerRevealBox');
+            const btn = document.getElementById('btnRevealAnswer');
+            if (!box) return;
+
+            answerRevealed = !answerRevealed;
+
+            if (answerRevealed) {
+                const orders = (q.signOrders && q.signOrders.length) ? q.signOrders : (q.signOrder ? [q.signOrder] : []);
+                box.textContent = '✅ 正確答案：' + orders.map(a => a.join(' ')).join('　|　');
+                box.classList.remove('hidden');
+                if (btn) {
+                    btn.textContent = '🙈 隱藏正確答案';
+                    btn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+                    btn.classList.add('bg-slate-400', 'hover:bg-slate-500');
+                }
+            } else {
+                box.classList.add('hidden');
+                if (btn) {
+                    btn.textContent = '👁️ 公布正確答案';
+                    btn.classList.remove('bg-slate-400', 'hover:bg-slate-500');
+                    btn.classList.add('bg-amber-500', 'hover:bg-amber-600');
+                }
+            }
         }
 
         function checkResult() {
@@ -2027,3 +2072,4 @@
     </script>
 </body>
 </html>
+
