@@ -231,6 +231,7 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <span id="totalSentenceCount" class="text-xs bg-cyan-100 text-cyan-700 px-3 py-1.5 rounded-full font-bold whitespace-nowrap">總題數：0</span>
+                            <button id="btnToggleAllEnable" onclick="toggleAllSentencesEnable()" class="text-xs px-2 py-1 rounded transition whitespace-nowrap">✅ 全選</button>
                             <button onclick="clearAllSentences()" class="text-xs bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-500 hover:text-white transition whitespace-nowrap">一鍵清除全部句型</button>
                         </div>
                     </div>
@@ -1093,12 +1094,42 @@
             sentences[idx].enabled = isChecked;
             saveToLocalStore();
             renderSelectAndFilters();
+            syncToggleAllButton();
         }
 
         function toggleGroupAll(indicesString, checkState) {
             indicesString.split(',').map(Number).forEach(idx => { sentences[idx].enabled = checkState; });
             saveToLocalStore();
             init();
+        }
+
+        // 教材庫管理：全選 / 全不選 切換鍵（套用至目前所有題目，不分冊別單元）
+        function toggleAllSentencesEnable() {
+            if (sentences.length === 0) return;
+            const allEnabled = sentences.every(s => s.enabled !== false);
+            const nextState = !allEnabled; // 目前若已全選，按下去改為全不選；反之改為全選
+            const label = nextState ? '全選（啟用）' : '全不選（停用）';
+            if (!confirm(`確定要將目前全部 ${sentences.length} 筆題目設為「${label}」嗎？`)) return;
+            sentences.forEach(s => { s.enabled = nextState; });
+            saveToLocalStore();
+            init();
+        }
+
+        // 依目前題目啟用狀態，同步更新全選/全不選切換鍵的文字與樣式
+        function syncToggleAllButton() {
+            const btn = document.getElementById('btnToggleAllEnable');
+            if (!btn) return;
+            const allEnabled = sentences.length > 0 && sentences.every(s => s.enabled !== false);
+            btn.classList.remove('bg-emerald-50', 'text-emerald-600', 'hover:bg-emerald-500', 'bg-slate-100', 'text-slate-500', 'hover:bg-slate-500', 'hover:text-white');
+            if (allEnabled) {
+                // 目前全部已啟用 -> 按鍵顯示可執行「全不選」
+                btn.textContent = '⬜ 全不選';
+                btn.classList.add('bg-slate-100', 'text-slate-500', 'hover:bg-slate-500', 'hover:text-white');
+            } else {
+                // 目前尚未全部啟用 -> 按鍵顯示可執行「全選」
+                btn.textContent = '✅ 全選';
+                btn.classList.add('bg-emerald-50', 'text-emerald-600', 'hover:bg-emerald-500', 'hover:text-white');
+            }
         }
 
         function resetSentForm() {
@@ -1702,6 +1733,7 @@
 
             const totalCountEl = document.getElementById('totalSentenceCount');
             if (totalCountEl) totalCountEl.textContent = `總題數：${sentences.length}`;
+            syncToggleAllButton();
 
             const listContainer = document.getElementById('sentList');
             if (sentences.length === 0) {
