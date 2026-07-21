@@ -12,7 +12,7 @@
         .tab-btn.active { border-bottom: 3px solid #0891b2; color: #0891b2; }
         .tab-btn { color: #64748b; transition: all 0.3s; cursor: pointer; }
         
-        .slot { border: 2px dashed #cbd5e1; min-height: 90px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; background: #ffffff; cursor: default; }
+        .slot { border: 2px dashed #cbd5e1; min-height: 64px; border-radius: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; background: #ffffff; cursor: default; }
         
         .slot.filled, .vocab-card { cursor: grab; }
         .slot.filled:active, .vocab-card:active { cursor: grabbing !important; }
@@ -55,22 +55,22 @@
         }
         .gallery-card img {
             width: 100%;
-            height: 160px;
+            height: 380px;
             object-fit: cover;
         }
         .gallery-card .no-img {
             width: 100%;
-            height: 160px;
+            height: 380px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #e0f2fe 0%, #f3e8ff 100%);
-            font-size: 2.5rem;
+            font-size: 3.5rem;
         }
         .gallery-card .card-label {
-            padding: 0.75rem 1rem;
+            padding: 1rem 1.25rem;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 1.25rem;
             color: #1e293b;
             text-align: center;
             width: 100%;
@@ -118,13 +118,13 @@
                     </div>
 
                     <p class="text-slate-500 text-sm mb-4 font-medium text-center">👇 點選圖片開始手語語序練習（僅顯示已勾選啟用的題目）</p>
-                    <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+                    <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"></div>
                     <p id="emptyHint" class="hidden text-slate-400 text-sm py-8 text-center">該冊別/單元下尚未新增任何題目，或題目皆被取消勾選，請前往「教材庫管理」檢查。</p>
                 </div>
 
                 <select id="sentenceSelect" class="hidden"></select>
                 
-                <div id="gameZone" class="hidden max-w-4xl mx-auto text-center">
+                <div id="gameZone" class="hidden max-w-6xl mx-auto text-center">
                     <div class="mb-4 flex items-center justify-between max-w-md mx-auto">
                         <button onclick="returnToGallery()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-cyan-600 transition font-medium">
                             ← 返回題目列表
@@ -138,16 +138,16 @@
                             👁️ 公布正確答案
                         </button>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl mb-8 border border-slate-100 shadow-lg">
-                        <h2 id="targetChinese" class="text-3xl font-bold text-slate-800 mb-2 whitespace-pre-line"></h2>
+                    <div class="bg-white p-6 md:p-8 rounded-2xl mb-8 border border-slate-100 shadow-lg">
+                        <h2 id="targetChinese" class="text-3xl md:text-4xl font-bold text-slate-800 mb-4 whitespace-pre-line"></h2>
                         
                         <div id="imageArea" class="hidden py-4 flex flex-col justify-center items-center relative group">
                             <div class="flex items-center justify-center max-w-full relative">
-                                <button id="prevImgBtn" onclick="changeImage(-1)" class="hidden absolute left-2 bg-black/50 hover:bg-black/70 text-white font-bold w-10 h-10 rounded-full z-10 text-xl transition">◀</button>
+                                <button id="prevImgBtn" onclick="changeImage(-1)" class="hidden absolute left-2 bg-black/50 hover:bg-black/70 text-white font-bold w-12 h-12 rounded-full z-10 text-2xl transition">◀</button>
                                 
-                                <img id="targetImage" src="" class="max-w-full h-auto max-h-72 rounded-xl shadow-md border border-slate-50">
+                                <img id="targetImage" src="" class="max-w-full h-auto max-h-[750px] rounded-xl shadow-md border border-slate-50">
                                 
-                                <button id="nextImgBtn" onclick="changeImage(1)" class="hidden absolute right-2 bg-black/50 hover:bg-black/70 text-white font-bold w-10 h-10 rounded-full z-10 text-xl transition">▶</button>
+                                <button id="nextImgBtn" onclick="changeImage(1)" class="hidden absolute right-2 bg-black/50 hover:bg-black/70 text-white font-bold w-12 h-12 rounded-full z-10 text-2xl transition">▶</button>
                             </div>
                             <div id="imageCounter" class="mt-2 text-xs bg-slate-100 px-3 py-1 rounded-full text-slate-500 font-bold"></div>
                         </div>
@@ -178,11 +178,11 @@
                     </div>
                     <div id="resultFeedback" class="hidden text-2xl font-bold mb-4"></div>
                     <div id="answerRevealBox" class="hidden text-sm font-bold text-amber-800 bg-amber-50 border-2 border-dashed border-amber-400 rounded-xl p-3 mb-4 max-w-xl mx-auto"></div>
-                    <div id="dropZone" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10"></div>
+                    <div id="dropZone" class="flex flex-col items-center gap-3 mb-10 w-full"></div>
                     <div id="poolContainer">
-                        <p id="poolHint" class="text-xs text-slate-400 font-medium mb-2 text-center">🃏 詞彙池 — 拖曳或點選放入格子，多餘的字不需要放入</p>
+                        <p id="poolHint" class="text-sm text-slate-500 font-medium mb-3 text-center">🃏 詞彙池 — 拖曳或點選放入格子，多餘的字不需要放入</p>
                         <div id="cardPool" 
-                             class="flex flex-wrap justify-center gap-3 p-6 bg-white/50 rounded-2xl border border-dashed border-slate-300 min-h-[100px]"
+                             class="flex flex-wrap justify-center gap-4 p-6 bg-white/50 rounded-2xl border border-dashed border-slate-300 min-h-[120px]"
                              ondragover="event.preventDefault(); this.classList.add('drag-over')" 
                              ondragleave="this.classList.remove('drag-over')" 
                              ondrop="handleReturnToPool(event)">
@@ -196,7 +196,7 @@
             <div class="mb-3 p-4 bg-slate-800 text-white rounded-2xl flex flex-wrap justify-between items-center gap-4 shadow-md">
                 <div>
                     <h3 class="font-bold text-base text-cyan-400">本機教材檔案管理 (.json 備份與移轉)</h3>
-                    <p class="text-xs text-slate-300">目前資料儲存於本機瀏覽器。建議定期「下載教材檔案」進行備份，可在其他電腦「合併上傳」使用。</p>
+                    <p class="text-xs text-slate-300">目前資料儲存於本機瀏覽器。建議定期「下載教材檔案」進行備份，可在其他電腦「合併動態上傳」使用。</p>
                 </div>
                 <div class="flex items-center gap-3 flex-wrap">
                     <button onclick="exportData()" class="bg-cyan-600 hover:bg-cyan-500 transition px-4 py-2 rounded-lg text-sm font-bold shadow">
@@ -271,8 +271,8 @@
 
                         <div class="p-3 rounded-lg border border-dashed border-cyan-300 bg-cyan-50/50">
                             <p class="text-xs text-cyan-800 font-bold mb-1">✍️ 正確語序（可輸入多組答案）</p>
-                            <p class="text-xs text-slate-500 mb-2">單字之間用<b>空格</b>隔開。多組答案請用<b>豎線 (|)</b> 隔開。這部分空格加大，填入答案可較多組。</p>
-                            <textarea id="sentOrder" rows="4" placeholder="正確語序 (多組答案請用豎線 | 隔開，也可換行方便閱讀)" class="w-full p-3 rounded-lg outline-none border bg-white resize-y leading-relaxed"></textarea>
+                            <p class="text-xs text-slate-500 mb-2">單字之間用<b>空格</b>隔開；按 <b>Enter 換行</b>，前端手語語序格子也會同步分行。多組答案請用<b>豎線 (|)</b> 隔開。</p>
+                            <textarea id="sentOrder" rows="4" placeholder="正確語序 (按 Enter 換行前端也會同步分行，多組答案請用豎線 | 隔開)" class="w-full p-3 rounded-lg outline-none border bg-white resize-y leading-relaxed"></textarea>
                         </div>
                         <div class="p-3 rounded-lg border border-dashed border-amber-300 bg-amber-50">
                             <p class="text-xs text-amber-700 font-bold mb-1">📝 詞彙池額外單字（干擾詞）</p>
@@ -316,20 +316,60 @@
         let sentences = [];
         let bookUnitData = {};
         let isUnlocked = false;
-        let wasCorrectLastCheck = false; // 追蹤上一次檢查是否為正確狀態，用來判斷「這次是不是剛答對」
-        let answerRevealed = false; // 是否正在公布正確答案
+        let wasCorrectLastCheck = false;
+        let answerRevealed = false;
         let editSentIdx = -1;
+        let openGroupIds = new Set();
+        let closedGroupIds = new Set();
 
         let currentEditingImages = []; 
         let currentPlayImgIdx = 0;
         let currentPlayImgList = [];
+
+        function parseOrderText(o) {
+            if (!o || !o.trim()) return { signOrders: [], signLines: [] };
+            const rawAlts = o.split('|');
+            const signOrders = [];
+            const signLines = [];
+
+            rawAlts.forEach(altStr => {
+                const rawLines = altStr.split(/\r?\n/);
+                const altLines = [];
+                const altWords = [];
+
+                rawLines.forEach(lineStr => {
+                    const words = lineStr.trim().split(/\s+/).filter(w => w !== '');
+                    if (words.length > 0) {
+                        altLines.push(words);
+                        altWords.push(...words);
+                    }
+                });
+
+                if (altWords.length > 0) {
+                    signOrders.push(altWords);
+                    signLines.push(altLines);
+                }
+            });
+
+            return { signOrders, signLines };
+        }
+
+        function getOrderText(s) {
+            if (!s) return '';
+            if (s.signLines && s.signLines.length > 0) {
+                return s.signLines.map(lines => lines.map(l => l.join(' ')).join('\n')).join('\n|\n');
+            }
+            if (s.signOrders) {
+                return s.signOrders.map(arr => arr.join(' ')).join(' | ');
+            }
+            return '';
+        }
 
         async function runDiagnostic() {
             document.getElementById('diag-local').textContent = sentences.length;
             const payload = JSON.stringify({ sentences, bookUnitData });
             const lsSizeKB = (new Blob([payload]).size / 1024).toFixed(1);
 
-            // 估算 IndexedDB 使用量
             let idbSizeKB = 0;
             try {
                 const allKeys = await getAllImgKeysFromDB();
@@ -349,7 +389,6 @@
                 `localStorage: ${lsSizeKB} KB ｜ 圖片(IndexedDB): ${idbSizeKB.toFixed(0)} KB ｜ 合計: ${totalMB} MB ✅`;
         }
 
-        // ===== IndexedDB 圖片儲存層 =====
         const IDB_NAME = 'SLLabImgDB';
         const IDB_VERSION = 1;
         const IDB_STORE = 'images';
@@ -403,52 +442,43 @@
             });
         }
 
-        // 產生唯一 key (以 idb: 開頭代表存在 IndexedDB)
         function genImgKey() {
             return 'idb:img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
         }
 
-        // 判斷是否為 idb 引用 key
         function isIdbKey(str) {
             return typeof str === 'string' && str.startsWith('idb:');
         }
 
-        // 將字串安全轉為可放入 HTML 屬性的內容（避免冊別/單元名稱含特殊字元破壞屬性）
         function escAttr(str) {
             return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
-        // 將字串安全轉為可放入 HTML 內容（textarea 等標籤之間）的文字，避免 < > & 破壞結構
         function escHtml(str) {
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
-        // 將字串轉為可安全當作 HTML id 使用的內容
         function idSafe(str) {
             return encodeURIComponent(String(str)).replace(/[^a-zA-Z0-9_-]/g, '_');
         }
 
-        // 將字串安全轉為可嵌入 onclick 內的 JS 字串參數（避免冊別/單元名稱含引號時破壞語法）
         function jsAttr(str) {
             return JSON.stringify(String(str)).replace(/"/g, '&quot;');
         }
 
-        // 將圖片引用（idb key 或 base64/url）解析成可顯示的 src
         async function resolveImgSrc(ref) {
             if (!ref) return null;
             if (isIdbKey(ref)) {
                 return await getImgFromDB(ref.replace('idb:', ''));
             }
-            return ref; // 直接是 base64 或 URL
+            return ref;
         }
 
-        // 將一個 DOM img 元素設定為指定引用的圖片
         async function applyImgSrc(imgEl, ref) {
             const src = await resolveImgSrc(ref);
             if (src) imgEl.src = src;
         }
 
-        // ===== 垃圾回收：刪除 IndexedDB 中已無任何題目引用的圖片 key =====
         async function gcOrphanImages() {
             try {
                 const allKeys = await getAllImgKeysFromDB();
@@ -465,7 +495,6 @@
             } catch(e) { console.warn('GC 失敗', e); }
         }
 
-        // ===== 雲端同步 (Firebase Realtime Database) =====
         const CLOUD_DB_URL = 'https://picture-3fc87-default-rtdb.asia-southeast1.firebasedatabase.app/sl_lab_data';
         let cloudSyncTimer = null;
         let suppressCloudPush = false;
@@ -493,7 +522,6 @@
             el.className = 'ml-auto text-xs self-center px-2 py-1 rounded font-bold ' + cls;
         }
 
-        // 將目前資料（圖片一律解析為 base64）打包成可上傳雲端的內容
         async function buildCloudPayload() {
             const exportSentences = [];
             for (const s of sentences) {
@@ -515,7 +543,6 @@
             };
         }
 
-        // 實際上傳到 Firebase（覆蓋整個雲端節點）
         async function pushToCloud(silent) {
             if (cloudSyncing) return;
             cloudSyncing = true;
@@ -537,7 +564,6 @@
             }
         }
 
-        // 資料異動後，延遲一小段時間再自動上傳（避免頻繁寫入雲端）
         function queueCloudSync() {
             if (suppressCloudPush) return;
             setLocalUpdatedAt(Date.now());
@@ -546,15 +572,12 @@
             cloudSyncTimer = setTimeout(() => pushToCloud(true), 1500);
         }
 
-        // 手動：立即將目前資料上傳（覆蓋）到雲端
         async function manualPushToCloud() {
             setLocalUpdatedAt(Date.now());
             await pushToCloud(false);
             alert('✅ 已將目前資料上傳到雲端！');
         }
 
-        // 從雲端下載資料並套用到本機（圖片會存回 IndexedDB）
-        // forceApply = true 時無視版本時間直接覆蓋本機
         async function pullFromCloud(showAlert, forceApply) {
             updateCloudStatusUI('syncing');
             try {
@@ -611,13 +634,11 @@
             }
         }
 
-        // 手動：從雲端強制下載並覆蓋本機資料
         async function manualPullFromCloud() {
             if (!confirm('確定要用雲端資料覆蓋本機目前的資料嗎？')) return;
             await pullFromCloud(true, true);
         }
 
-        // 啟動流程：先讀本機資料快速顯示畫面，再背景比對雲端是否有更新版本
         async function bootStrap() {
             loadLocalStoreData();
             try {
@@ -627,7 +648,6 @@
             }
         }
 
-        // ===== 核心本機資料讀取 =====
         function loadLocalStoreData() {
             const localSentences = JSON.parse(localStorage.getItem('sl_cat_s')) || [];
             const localBookUnit = JSON.parse(localStorage.getItem('sl_book_unit_data')) || {};
@@ -645,7 +665,6 @@
             runDiagnostic();
         }
 
-        // ===== 核心本機資料儲存（圖片已在 IndexedDB，localStorage 只存 key 引用）=====
         function saveToLocalStore() {
             localStorage.setItem('sl_cat_s', JSON.stringify(sentences));
             localStorage.setItem('sl_book_unit_data', JSON.stringify(bookUnitData));
@@ -653,7 +672,6 @@
             queueCloudSync();
         }
 
-        // ===== 圖片壓縮 + 存入 IndexedDB，返回 idb key =====
         async function handleMultipleFiles(event) {
             const files = event.target.files;
             if (!files || files.length === 0) return;
@@ -680,7 +698,6 @@
                             canvas.getContext('2d').drawImage(img, 0, 0, width, height);
                             const base64 = canvas.toDataURL('image/jpeg', 0.7);
 
-                            // 存入 IndexedDB，只保留 key
                             const key = genImgKey();
                             await saveImgToDB(key.replace('idb:', ''), base64);
                             resolve(key);
@@ -734,7 +751,6 @@
                 return;
             }
 
-            // 將所有 idb: key 替換成真實 base64，確保匯出 JSON 完整可移植
             const exportSentences = [];
             for (const s of sentences) {
                 const resolvedImages = [];
@@ -800,7 +816,6 @@
                                 );
 
                                 if (!isDuplicate) {
-                                    // 將 base64 圖片移入 IndexedDB，換成 idb key
                                     const idbImages = [];
                                     for (const ref of newS.images) {
                                         if (ref && ref.startsWith('data:')) {
@@ -808,7 +823,7 @@
                                             await saveImgToDB(key.replace('idb:', ''), ref);
                                             idbImages.push(key);
                                         } else {
-                                            idbImages.push(ref); // URL 或已是 idb key
+                                            idbImages.push(ref);
                                         }
                                     }
                                     newS.images = idbImages;
@@ -862,7 +877,6 @@
             const b = document.getElementById('formBookSelect').value;
             const u = document.getElementById('formUnitSelect').value;
 
-            // 【修改重點】強制檢查是否選擇了冊別與單元，避免題目變成「未定」而找不到
             if (!c || !o) {
                 alert("請填寫中文例句與正確語序！");
                 return;
@@ -873,20 +887,21 @@
             }
             
             const d = document.getElementById('sentDistractors').value.trim();
-            const orders = o.split('|').map(str => str.trim().split(/\s+/)).filter(arr => arr.length > 0 && arr[0] !== "");
+            const { signOrders, signLines } = parseOrderText(o);
             
             const data = { 
                 chinese: c, 
                 images: currentEditingImages, 
                 image: currentEditingImages[0] || "", 
-                signOrders: orders, 
+                signOrders: signOrders, 
+                signLines: signLines,
                 distractors: d ? d.split(/\s+/) : [],
                 book: b, unit: u,
                 enabled: editSentIdx === -1 ? true : (sentences[editSentIdx].enabled !== undefined ? sentences[editSentIdx].enabled : false)
             };
 
             const isNew = editSentIdx === -1;
-            const backupSentences = [...sentences]; // 預先保留舊資料備份，以防寫入失敗
+            const backupSentences = [...sentences];
 
             if(isNew) {
                 sentences.push(data);
@@ -894,8 +909,11 @@
                 sentences[editSentIdx] = data;
             }
 
+            openGroupIds.add('book-group-' + idSafe(b));
+            closedGroupIds.delete('unit-group-' + idSafe(b) + '-' + idSafe(u));
+
             try {
-                saveToLocalStore(); // 儲存至本機 localStorage（圖片已在 IndexedDB）
+                saveToLocalStore();
             } catch (error) {
                 console.error(error);
                 sentences = backupSentences;
@@ -906,23 +924,24 @@
             resetSentForm();
             init();
 
-            // 【修改重點】精準鎖定剛新增/修改的題目，解開其上層冊別與單元外框並高亮捲動
             setTimeout(() => {
                 const sentList = document.getElementById('sentList');
                 if (!sentList) return;
 
-                // 利用 data-index 來精確比對剛才資料在列表中的位置
                 const targetIdx = isNew ? sentences.length - 1 : editSentIdx;
                 const targetItem = sentList.querySelector(`.draggable-item[data-index="${targetIdx}"]`);
                 
                 if (targetItem) {
-                    // 自動開啟其上層所有被摺疊的外框，確保新增加的卡片看得見
                     let p = targetItem.parentElement;
                     while (p && p !== sentList) {
                         if (p.classList.contains('hidden')) {
                             p.classList.remove('hidden');
                             const arrow = document.getElementById('arrow-' + p.id);
                             if (arrow) arrow.innerText = '▼';
+                        }
+                        if (p.id) {
+                            openGroupIds.add(p.id);
+                            closedGroupIds.delete(p.id);
                         }
                         p = p.parentElement;
                     }
@@ -937,7 +956,6 @@
             }, 100);
         }
 
-        // 在按鍵下方同步顯示「目前已建立的冊別及單元」完整資料（會隨資料異動即時更新），並可獨立刪除冊別或單元
         function renderBookUnitMsg(highlightBook, highlightUnit) {
             const el = document.getElementById('bookUnitMsg');
             if (!el) return;
@@ -972,7 +990,6 @@
             el.className = 'text-xs rounded-lg px-3 py-2 mb-4 mt-2 border bg-white text-slate-600 border-purple-200 max-h-40 overflow-y-auto';
         }
 
-        // 獨立刪除整個冊別（含其下所有單元名稱，不影響已建立的題目）
         function deleteBookEntry(book) {
             if (!confirm(`確定要刪除整個冊別「${book}」嗎？（其下所有單元名稱也會一併移除，此動作不影響已建立的題目資料）`)) return;
             delete bookUnitData[book];
@@ -980,7 +997,6 @@
             init();
         }
 
-        // 獨立刪除單一單元
         function deleteUnitEntry(book, unit) {
             if (!confirm(`確定要刪除單元「${book} - ${unit}」嗎？`)) return;
             if (bookUnitData[book]) {
@@ -1021,7 +1037,6 @@
             saveBookUnit._t = setTimeout(() => renderBookUnitMsg(), 2500);
         }
 
-        // 新增冊別/單元後，在下方清單中定位並高亮顯示剛新增的資料
         function highlightBookUnitEntry(book, unit) {
             setTimeout(() => {
                 if (unit) {
@@ -1053,9 +1068,7 @@
             document.getElementById('sentImageUrls').value = "";
             renderImagePreviewList();
             
-            if(s.signOrders) {
-                document.getElementById('sentOrder').value = s.signOrders.map(arr => arr.join(' ')).join(' | ');
-            }
+            document.getElementById('sentOrder').value = getOrderText(s);
             
             document.getElementById('sentDistractors').value = (s.distractors || []).join(' ');
             document.getElementById('formBookSelect').value = s.book || "";
@@ -1071,7 +1084,6 @@
             if (!confirm('確定刪除？')) return;
             const removed = sentences.splice(idx, 1)[0];
             saveToLocalStore();
-            // 非同步清理孤立圖片（不阻塞 UI）
             gcOrphanImages();
             init();
         }
@@ -1087,9 +1099,14 @@
             if(!c || !o) { alert("內容不能為空！"); return; }
 
             s.chinese = c;
-            s.signOrders = o.split('|').map(str => str.trim().split(/\s+/)).filter(arr => arr.length > 0 && arr[0] !== "");
+            const { signOrders, signLines } = parseOrderText(o);
+            s.signOrders = signOrders;
+            s.signLines = signLines;
             s.distractors = d ? d.split(/\s+/) : [];
             s.book = b; s.unit = u;
+
+            openGroupIds.add('book-group-' + idSafe(b));
+            closedGroupIds.delete('unit-group-' + idSafe(b) + '-' + idSafe(u));
 
             saveToLocalStore();
             init();
@@ -1119,7 +1136,6 @@
             init();
         }
 
-        // 教材庫管理：全選 / 全不選（套用至目前所有題目，不分冊別單元）
         function setAllSentencesEnable(state) {
             if (sentences.length === 0) return;
             const label = state ? '全選（啟用）' : '全不選（停用）';
@@ -1129,7 +1145,6 @@
             init();
         }
 
-        // 依目前題目啟用狀態，同步更新「全選」「全不選」兩顆按鍵的打勾顯示（互斥）
         function syncSelectButtons() {
             const btnSelectAll = document.getElementById('btnSelectAll');
             const btnDeselectAll = document.getElementById('btnDeselectAll');
@@ -1224,7 +1239,6 @@
             renderGame(q);
         }
 
-        // ===== 練習頁：在圖片下方直接修改題目文字與圖片 =====
         function togglePlayEdit() {
             const idx = document.getElementById('sentenceSelect').value;
             if (idx === "") return;
@@ -1308,7 +1322,6 @@
             showPlayEditMsg('✅ 已新增圖片，資料已同步雲端');
         }
 
-        // 練習頁：直接貼上圖片網址新增（不需上傳檔案）
         function handlePlayUrlAdd() {
             const idx = document.getElementById('sentenceSelect').value;
             const input = document.getElementById('playImgUrl');
@@ -1345,7 +1358,6 @@
             showPlayEditMsg('🗑️ 已刪除圖片');
         }
 
-        // 圖片新增/刪除後，同步刷新目前作答畫面正在顯示的大圖與縮圖清單
         function refreshPlayImagesAfterEdit(idx) {
             const s = sentences[idx];
             if (!s) return;
@@ -1392,14 +1404,24 @@
 
         function renderGame(q) {
             const targetOrder = q.signOrders ? q.signOrders[0] : (q.signOrder || []);
+            const targetLines = (q.signLines && q.signLines[0]) ? q.signLines[0] : [targetOrder];
 
-            document.getElementById('dropZone').innerHTML = targetOrder.map((_, i) => 
-                `<div class="slot" id="slot-${i}" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event, ${i})" oncontextmenu="return handleSlotRightClick(event, ${i})" onclick="handleSlotLeftClick(${i})">待填入</div>`
-            ).join('');
+            let globalSlotIdx = 0;
+            let dropZoneHtml = '';
+
+            targetLines.forEach((lineWords) => {
+                dropZoneHtml += `<div class="flex flex-wrap justify-center gap-3 md:gap-4 w-full">`;
+                lineWords.forEach(() => {
+                    const i = globalSlotIdx++;
+                    dropZoneHtml += `<div class="slot min-w-[90px] md:min-w-[130px] flex-1 max-w-[180px] text-lg md:text-xl font-bold" id="slot-${i}" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event, ${i})" oncontextmenu="return handleSlotRightClick(event, ${i})" onclick="handleSlotLeftClick(${i})">待填入</div>`;
+                });
+                dropZoneHtml += `</div>`;
+            });
+
+            document.getElementById('dropZone').innerHTML = dropZoneHtml;
 
             currentDistractors = (q.distractors && Array.isArray(q.distractors)) ? q.distractors.filter(w => w && w.trim() !== '') : [];
 
-            // 計算每個單詞在各組正確語序中出現的最大次數，確保重複單詞也能產生足夠的詞卡
             let wordCounts = {};
             if (q.signOrders) {
                 q.signOrders.forEach(arr => {
@@ -1428,7 +1450,7 @@
                 card.dataset.poolIdx = String(poolIdx);
                 card.draggable = true;
                 card.textContent = w;
-                card.className = 'pool-word-card bg-white px-5 py-3 rounded-xl font-bold border-b-4 border-slate-200 hover:bg-violet-50 hover:border-violet-300 transition shadow-sm text-slate-700 cursor-grab select-none';
+                card.className = 'pool-word-card bg-white px-6 py-4 rounded-xl font-bold text-xl md:text-2xl border-b-4 border-slate-200 hover:bg-violet-50 hover:border-violet-300 transition shadow-sm text-slate-700 cursor-grab select-none';
                 card.addEventListener('dragstart', e => {
                     e.dataTransfer.setData('text/plain', w);
                     e.dataTransfer.setData('fromSlotIdx', '');
@@ -1515,7 +1537,6 @@
             }
         }
 
-        // 共用邏輯：把指定格子中的詞卡退回詞彙池（拖曳／右鍵／左鍵點擊都會用到）
         function returnSlotWordToPool(idx) {
             const slot = document.getElementById(`slot-${idx}`);
             if (!slot || !slot.classList.contains('filled')) return;
@@ -1532,14 +1553,12 @@
             checkResult();
         }
 
-        // 右鍵點擊已填入的格子：直接把該詞卡退回詞彙池（等同拖曳退回）
         function handleSlotRightClick(e, idx) {
             e.preventDefault();
             returnSlotWordToPool(idx);
             return false;
         }
 
-        // 左鍵單擊已填入的格子：同樣把該詞卡退回詞彙池
         function handleSlotLeftClick(idx) {
             returnSlotWordToPool(idx);
         }
@@ -1555,8 +1574,15 @@
             answerRevealed = !answerRevealed;
 
             if (answerRevealed) {
-                const orders = (q.signOrders && q.signOrders.length) ? q.signOrders : (q.signOrder ? [q.signOrder] : []);
-                box.textContent = '✅ 正確答案：' + orders.map(a => a.join(' ')).join(' | ');
+                let text = '';
+                if (q.signLines && q.signLines.length > 0) {
+                    text = q.signLines.map(lines => lines.map(l => l.join(' ')).join('\n')).join('\n--- 或 ---\n');
+                } else {
+                    const orders = (q.signOrders && q.signOrders.length) ? q.signOrders : (q.signOrder ? [q.signOrder] : []);
+                    text = orders.map(a => a.join(' ')).join(' | ');
+                }
+                box.textContent = '✅ 正確答案：\n' + text;
+                box.style.whiteSpace = 'pre-line';
                 box.classList.remove('hidden');
                 if (btn) {
                     btn.textContent = '🙈 隱藏正確答案';
@@ -1590,8 +1616,6 @@
             const isCorrect = q.signOrders && q.signOrders.some(ansArr => JSON.stringify(current) === JSON.stringify(ansArr));
 
             if (isCorrect) {
-                // 只要這次操作後排列結果正確，就噴一次彩帶慶祝；
-                // 即使重新排列後又湊巧答對，也會再次觸發慶祝效果
                 confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
                 confetti({ particleCount: 60, spread: 100, startVelocity: 45, origin: { x: 0.2, y: 0.5 } });
                 confetti({ particleCount: 60, spread: 100, startVelocity: 45, origin: { x: 0.8, y: 0.5 } });
@@ -1605,7 +1629,6 @@
                 }
             } else {
                 wasCorrectLastCheck = false;
-                // 答錯：顯示悲傷表情並讓格子輕輕搖晃，鼓勵再試一次
                 slots.forEach(s => {
                     s.classList.add('shake-sad');
                     setTimeout(() => s.classList.remove('shake-sad'), 500);
@@ -1623,7 +1646,15 @@
             const arrow = document.getElementById('arrow-' + id);
             if (target && arrow) {
                 target.classList.toggle('hidden');
-                arrow.innerText = target.classList.contains('hidden') ? '▶' : '▼';
+                const isHidden = target.classList.contains('hidden');
+                arrow.innerText = isHidden ? '▶' : '▼';
+                if (!isHidden) {
+                    openGroupIds.add(id);
+                    closedGroupIds.delete(id);
+                } else {
+                    openGroupIds.delete(id);
+                    closedGroupIds.add(id);
+                }
             }
         }
 
@@ -1668,14 +1699,13 @@
             }
             hint.classList.add('hidden');
 
-            // 先用佔位符渲染骨架
             grid.innerHTML = filtered.map((s, i) => {
                 const hasImg = s.images && s.images.length > 0;
                 return `
                 <div class="gallery-card relative" onclick="selectFromGallery(${s.originalIdx})">
-                    ${s.images && s.images.length > 1 ? `<span class="absolute top-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">📚 ${s.images.length}張圖</span>` : ''}
+                    ${s.images && s.images.length > 1 ? `<span class="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded font-bold">📚 ${s.images.length}張圖</span>` : ''}
                     ${hasImg
-                        ? `<img id="gallery-img-${i}" src="" alt="${escAttr(s.chinese)}" style="width:100%;height:160px;object-fit:cover;"><div class="no-img" style="display:none">🤟</div>`
+                        ? `<img id="gallery-img-${i}" src="" alt="${escAttr(s.chinese)}" style="width:100%;height:380px;object-fit:cover;"><div class="no-img" style="display:none">🤟</div>`
                         : `<div class="no-img">🤟</div>`}
                     <div class="card-label">
                         <div class="text-xs text-cyan-600 font-medium">${s.book || '未選'} - ${s.unit || '未選'}</div>
@@ -1684,7 +1714,6 @@
                 </div>`;
             }).join('');
 
-            // 非同步填入縮圖
             for (let i = 0; i < filtered.length; i++) {
                 const s = filtered[i];
                 const coverRef = s.images && s.images.length > 0 ? s.images[0] : (s.image || null);
@@ -1702,7 +1731,6 @@
             loadSentence();
         }
 
-        // 取得目前篩選條件（冊別/單元）下，所有已啟用題目的原始索引清單（順序與圖庫一致）
         function getFilteredEnabledIndices() {
             const selBook = document.getElementById('filterBook').value;
             const selUnit = document.getElementById('filterUnit').value;
@@ -1717,7 +1745,6 @@
                 .map(s => s.originalIdx);
         }
 
-        // 互動學習前台：切換到下一題（依目前篩選範圍循環）
         function goToNextSentence() {
             const list = getFilteredEnabledIndices();
             if (list.length === 0) return;
@@ -1762,12 +1789,12 @@
                 listContainer.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">目前沒有任何句型教材。</p>'; return;
             }
 
-            let html = ''; let groupIdCounter = 0;
+            let html = '';
             Object.entries(groups).forEach(([book, units]) => {
-                const bookGroupId = `book-group-admin-${groupIdCounter++}`;
+                const bookGroupId = `book-group-${idSafe(book)}`;
+                const isBookOpen = openGroupIds.has(bookGroupId);
                 const totalBookSentences = Object.values(units).reduce((sum, list) => sum + list.length, 0);
 
-                // 外層冊別面板：預設為 hidden 摺疊狀態
                 html += `
                 <div class="bg-slate-200/80 border border-slate-300 rounded-xl overflow-hidden mb-3 shadow-sm">
                     <div onclick="toggleGroupCollapse('${bookGroupId}')" class="flex justify-between items-center bg-slate-300/70 px-4 py-3 font-bold text-sm text-slate-800 cursor-pointer hover:bg-slate-300 transition select-none">
@@ -1776,20 +1803,21 @@
                             <span class="text-xs text-slate-600 font-medium">（全冊共 ${totalBookSentences} 題）</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span id="arrow-${bookGroupId}" class="text-slate-600 text-xs font-bold">▶</span>
+                            <span id="arrow-${bookGroupId}" class="text-slate-600 text-xs font-bold">${isBookOpen ? '▼' : '▶'}</span>
                         </div>
                     </div>
-                    <div id="${bookGroupId}" class="hidden p-3 space-y-3 bg-slate-100/50">`;
+                    <div id="${bookGroupId}" class="${isBookOpen ? '' : 'hidden'} p-3 space-y-3 bg-slate-100/50">`;
 
                 Object.entries(units).forEach(([unit, list]) => {
-                    const elementId = `group-admin-list-${groupIdCounter++}`;
+                    const elementId = `unit-group-${idSafe(book)}-${idSafe(unit)}`;
+                    const isUnitClosed = closedGroupIds.has(elementId);
                     html += `
                     <div class="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
                         <div class="flex justify-between items-center bg-slate-100 px-3.5 py-2 font-bold text-xs text-slate-700 select-none">
                             <div onclick="toggleGroupCollapse('${elementId}')" class="flex items-center gap-2 cursor-pointer hover:text-slate-900 transition flex-1">
                                 <span class="text-xs bg-purple-600 text-white px-2 py-0.5 rounded shadow-sm">${unit}</span>
                                 <span class="text-[11px] text-slate-500 font-normal">（共 ${list.length} 題）</span>
-                                <span id="arrow-${elementId}" class="text-slate-500 text-xs ml-1">▼</span>
+                                <span id="arrow-${elementId}" class="text-slate-500 text-xs ml-1">${isUnitClosed ? '▶' : '▼'}</span>
                             </div>
                             <div class="flex items-center gap-2 text-xs font-normal">
                                 <button onclick="toggleGroupAll('${list.map(item => item.idx).join(',')}', true)" class="text-cyan-600 hover:underline">全選</button>
@@ -1797,10 +1825,10 @@
                                 <button data-idxs="${list.map(item => item.idx).join(',')}" data-book="${escAttr(book)}" data-unit="${escAttr(unit)}" onclick="deleteUnitGroup(this)" class="text-red-500 hover:underline font-bold">🗑️ 刪除整單元</button>
                             </div>
                         </div>
-                        <div id="${elementId}" class="p-2 space-y-3 bg-white drag-zone-container">`;
+                        <div id="${elementId}" class="${isUnitClosed ? 'hidden' : ''} p-2 space-y-3 bg-white drag-zone-container">`;
 
                     list.forEach((s, listPos) => {
-                        const orderStr = s.signOrders ? s.signOrders.map(arr => arr.join(' ')).join(' | ') : '';
+                        const orderStr = getOrderText(s);
                         const hasImg = (s.images && s.images.length > 0) || s.image;
                         const imgCount = s.images ? s.images.length : (s.image ? 1 : 0);
                         html += `
@@ -1815,7 +1843,7 @@
                                     </div>
                                     <div class="min-w-0">
                                         <b class="text-slate-800 text-sm block truncate">${escHtml(s.chinese.replace(/\n/g, ' '))}</b>
-                                        <span class="text-[10px] text-slate-400 block truncate">語序：${orderStr || '（尚未設定）'}</span>
+                                        <span class="text-[10px] text-slate-400 block truncate">語序：${escHtml(orderStr.replace(/\n/g, ' / ')) || '（尚未設定）'}</span>
                                     </div>
                                 </div>
                                 <div class="flex gap-2 font-bold whitespace-nowrap">
@@ -1830,7 +1858,7 @@
                                         <textarea id="inline-chinese-${s.idx}" rows="2" class="w-full p-1 border rounded bg-white font-medium resize-y">${escHtml(s.chinese)}</textarea>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] text-slate-400 font-bold">正確語序 (空格隔開，多組用 | )</label>
+                                        <label class="block text-[10px] text-slate-400 font-bold">正確語序 (空格隔開，按 Enter 換行)</label>
                                         <textarea id="inline-order-${s.idx}" rows="2" class="w-full p-1 border rounded bg-white font-medium text-purple-700 resize-y">${escHtml(orderStr)}</textarea>
                                     </div>
                                     <div>
@@ -1891,7 +1919,6 @@
             renderBookUnitMsg();
         }
 
-        // 摘要列縮圖：非同步載入每張題目卡片的第一張圖片，讓已儲存的題目一目了然（不用展開就能看到）
         function renderCardThumbnails() {
             sentences.forEach((s, i) => {
                 const ref = (s.images && s.images.length > 0) ? s.images[0] : (s.image || null);
@@ -1904,15 +1931,13 @@
             });
         }
 
-        // ===== 題目卡片內：直接管理圖片（新增/刪除，不需捲到最上方表單）=====
-        // 按「✏️ 修改」才展開該題完整的題目、答案(語序)、干擾詞、冊別/單元與圖片編輯區；再按一次收合
         function toggleSentenceDetail(idx) {
             const detail = document.getElementById(`detail-${idx}`);
             if (!detail) return;
             const isHidden = detail.classList.contains('hidden');
             if (isHidden) {
                 detail.classList.remove('hidden');
-                renderInlineImages(idx); // 展開當下才載入圖片，避免一次載入全部題目的圖片拖慢畫面
+                renderInlineImages(idx);
             } else {
                 detail.classList.add('hidden');
             }
@@ -1951,8 +1976,6 @@
             }
         }
 
-        // 直接於卡片內上傳新圖片（自動壓縮並存入 IndexedDB，即時生效）
-        // 共用：壓縮圖片並存入 IndexedDB，回傳 idb: 開頭的引用 key
         function compressAndStoreImageFile(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -2010,7 +2033,6 @@
             event.target.value = "";
         }
 
-        // 題目卡片：直接貼上圖片網址新增（不需上傳檔案）
         function handleInlineUrlAdd(idx) {
             const input = document.getElementById(`inline-imgurl-${idx}`);
             const s = sentences[idx];
@@ -2030,7 +2052,6 @@
             renderInlineImages(idx);
         }
 
-        // 直接於卡片內刪除指定圖片
         async function removeInlineImage(idx, imgArrIdx) {
             const s = sentences[idx];
             if (!s || !s.images) return;
@@ -2044,7 +2065,6 @@
             renderInlineImages(idx);
         }
 
-        // 刪除整個單元底下的所有題目（保留冊別/單元清單本身，僅清空該單元題目）
         function deleteUnitGroup(btn) {
             const idxs = (btn.dataset.idxs || '').split(',').filter(v => v !== '').map(Number);
             const book = btn.dataset.book;
@@ -2111,8 +2131,6 @@
             if(t === 'admin') runDiagnostic();
         }
 
-        // 全域功能：左鍵點擊文字輸入框／多行文字框時，自動全選內容方便直接修改
-        // （已聚焦狀態下再次點擊，仍可正常移動游標，不影響一般編輯操作）
         (function enableSelectAllOnClick() {
             let selectOnFocusPending = false;
             document.addEventListener('mousedown', function(e) {
@@ -2138,7 +2156,6 @@
             });
         })();
 
-        // 啟動：先載本機，再背景比對雲端是否有更新版本
         bootStrap();
     </script>
 </body>
