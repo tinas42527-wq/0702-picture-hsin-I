@@ -139,7 +139,7 @@
                         </button>
                     </div>
                     <div class="bg-white p-6 rounded-2xl mb-8 border border-slate-100 shadow-lg">
-                        <h2 id="targetChinese" class="text-3xl font-bold text-slate-800 mb-2"></h2>
+                        <h2 id="targetChinese" class="text-3xl font-bold text-slate-800 mb-2 whitespace-pre-line"></h2>
                         
                         <div id="imageArea" class="hidden py-4 flex flex-col justify-center items-center relative group">
                             <div class="flex items-center justify-center max-w-full relative">
@@ -158,7 +158,7 @@
                                 <div>
                                     <label class="block text-[11px] text-slate-400 font-bold mb-1">中文題目</label>
                                     <div class="flex gap-2">
-                                        <input type="text" id="playEditChinese" class="flex-1 p-2 border rounded text-sm">
+                                        <textarea id="playEditChinese" rows="2" class="flex-1 p-2 border rounded text-sm resize-y leading-relaxed"></textarea>
                                         <button onclick="savePlayChineseEdit()" class="bg-slate-700 text-white px-3 rounded text-xs font-bold whitespace-nowrap">💾 儲存文字</button>
                                     </div>
                                 </div>
@@ -256,7 +256,7 @@
                             </div>
                         </div>
 
-                        <input type="text" id="sentChinese" placeholder="中文例句" class="w-full p-3 rounded-lg outline-none border">
+                        <textarea id="sentChinese" rows="2" placeholder="中文例句 (按 Enter 可換行)" class="w-full p-3 rounded-lg outline-none border resize-y leading-relaxed"></textarea>
                         
                         <div class="p-3 border-2 border-dashed border-slate-200 rounded-lg bg-white">
                             <p class="text-xs text-slate-500 mb-2 font-bold">🖼️ 上傳一或多張圖片（本機自動輕量化壓縮）：</p>
@@ -1545,7 +1545,7 @@
 
             if (answerRevealed) {
                 const orders = (q.signOrders && q.signOrders.length) ? q.signOrders : (q.signOrder ? [q.signOrder] : []);
-                box.textContent = '✅ 正確答案：' + orders.map(a => a.join(' ')).join('　|　');
+                box.textContent = '✅ 正確答案：' + orders.map(a => a.join(' ')).join(' | ');
                 box.classList.remove('hidden');
                 if (btn) {
                     btn.textContent = '🙈 隱藏正確答案';
@@ -1629,7 +1629,7 @@
         }
 
         function renderSelectAndFilters() { 
-            document.getElementById('sentenceSelect').innerHTML = '<option value="">🔍 請選擇題目...</option>' + sentences.map((s, i) => s.enabled !== false ? `<option value="${i}">${s.chinese}</option>` : '').join(''); 
+            document.getElementById('sentenceSelect').innerHTML = '<option value="">🔍 請選擇題目...</option>' + sentences.map((s, i) => s.enabled !== false ? `<option value="${i}">${escHtml(s.chinese.replace(/\n/g, ' '))}</option>` : '').join(''); 
             
             const filterBook = document.getElementById('filterBook');
             const lastSelectedBook = filterBook.value;
@@ -1664,11 +1664,11 @@
                 <div class="gallery-card relative" onclick="selectFromGallery(${s.originalIdx})">
                     ${s.images && s.images.length > 1 ? `<span class="absolute top-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">📚 ${s.images.length}張圖</span>` : ''}
                     ${hasImg
-                        ? `<img id="gallery-img-${i}" src="" alt="${s.chinese}" style="width:100%;height:160px;object-fit:cover;"><div class="no-img" style="display:none">🤟</div>`
+                        ? `<img id="gallery-img-${i}" src="" alt="${escAttr(s.chinese)}" style="width:100%;height:160px;object-fit:cover;"><div class="no-img" style="display:none">🤟</div>`
                         : `<div class="no-img">🤟</div>`}
                     <div class="card-label">
                         <div class="text-xs text-cyan-600 font-medium">${s.book || '未選'} - ${s.unit || '未選'}</div>
-                        <div class="truncate">${s.chinese}</div>
+                        <div class="truncate">${escHtml(s.chinese.replace(/\n/g, ' '))}</div>
                     </div>
                 </div>`;
             }).join('');
@@ -1787,7 +1787,7 @@
                                         ${imgCount > 1 ? `<span class="absolute bottom-0 right-0 bg-black/60 text-white text-[8px] px-1 rounded-tl font-bold">×${imgCount}</span>` : ''}
                                     </div>
                                     <div class="min-w-0">
-                                        <b class="text-slate-800 text-sm block truncate">${s.chinese}</b>
+                                        <b class="text-slate-800 text-sm block truncate">${escHtml(s.chinese.replace(/\n/g, ' '))}</b>
                                         <span class="text-[10px] text-slate-400 block truncate">語序：${orderStr || '（尚未設定）'}</span>
                                     </div>
                                 </div>
@@ -1800,7 +1800,7 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1 border-t cursor-default" onclick="event.stopPropagation();">
                                     <div>
                                         <label class="block text-[10px] text-slate-400 font-bold">中文例句</label>
-                                        <input type="text" id="inline-chinese-${s.idx}" value="${s.chinese}" class="w-full p-1 border rounded bg-white">
+                                        <textarea id="inline-chinese-${s.idx}" rows="2" class="w-full p-1 border rounded bg-white font-medium resize-y">${escHtml(s.chinese)}</textarea>
                                     </div>
                                     <div>
                                         <label class="block text-[10px] text-slate-400 font-bold">正確語序 (空格隔開，多組用 | )</label>
