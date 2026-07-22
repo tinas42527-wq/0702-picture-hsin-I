@@ -142,14 +142,15 @@
                         <h2 id="targetChinese" class="text-3xl md:text-4xl font-bold text-slate-800 mb-4 whitespace-pre-line"></h2>
                         
                         <div id="imageArea" class="hidden py-4 flex flex-col justify-center items-center relative group">
-                            <div class="flex items-center justify-center max-w-full relative">
+                            <div class="flex items-center justify-center w-full max-w-4xl relative">
                                 <button id="prevImgBtn" onclick="changeImage(-1)" class="hidden absolute left-2 bg-black/50 hover:bg-black/70 text-white font-bold w-12 h-12 rounded-full z-10 text-2xl transition">◀</button>
                                 
-                                <img id="targetImage" src="" class="max-w-full h-auto max-h-[750px] rounded-xl shadow-md border border-slate-50">
+                                <img id="targetImage" src="" onclick="openImageModal()" class="w-full max-w-4xl h-auto max-h-[80vh] object-contain rounded-xl shadow-md border border-slate-50 cursor-zoom-in hover:scale-[1.01] transition-transform" title="點擊放大全螢幕觀看">
                                 
                                 <button id="nextImgBtn" onclick="changeImage(1)" class="hidden absolute right-2 bg-black/50 hover:bg-black/70 text-white font-bold w-12 h-12 rounded-full z-10 text-2xl transition">▶</button>
                             </div>
                             <div id="imageCounter" class="mt-2 text-xs bg-slate-100 px-3 py-1 rounded-full text-slate-500 font-bold"></div>
+                            <p class="text-xs text-slate-400 mt-1 font-medium">🔍 點擊圖片可放大至全螢幕觀看</p>
                         </div>
 
                         <div class="pt-3 mt-2 border-t border-slate-100">
@@ -312,6 +313,14 @@
         </section>
     </div>
 
+    <!-- 圖片全螢幕放大 Modal -->
+    <div id="imgModal" class="fixed inset-0 bg-black/80 z-50 hidden flex flex-col items-center justify-center p-4 cursor-zoom-out" onclick="closeImageModal()">
+        <div class="relative max-w-full max-h-full flex items-center justify-center" onclick="event.stopPropagation()">
+            <img id="modalImg" src="" class="max-w-[95vw] max-h-[90vh] object-contain rounded-lg shadow-2xl">
+            <button onclick="closeImageModal()" class="absolute -top-10 right-0 text-white text-base font-bold bg-slate-800/80 hover:bg-slate-700 px-3 py-1 rounded-lg transition shadow">✕ 關閉</button>
+        </div>
+    </div>
+
     <script>
         let sentences = [];
         let bookUnitData = {};
@@ -325,6 +334,17 @@
         let currentEditingImages = []; 
         let currentPlayImgIdx = 0;
         let currentPlayImgList = [];
+
+        function openImageModal() {
+            const imgTag = document.getElementById('targetImage');
+            if (!imgTag || !imgTag.src) return;
+            document.getElementById('modalImg').src = imgTag.src;
+            document.getElementById('imgModal').classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('imgModal').classList.add('hidden');
+        }
 
         function parseOrderText(o) {
             if (!o || !o.trim()) return { signOrders: [], signLines: [] };
@@ -1383,7 +1403,11 @@
 
             imgTag.src = '';
             const src = await resolveImgSrc(currentPlayImgList[currentPlayImgIdx]);
-            if (src) imgTag.src = src;
+            if (src) {
+                imgTag.src = src;
+                const modalImg = document.getElementById('modalImg');
+                if (modalImg) modalImg.src = src;
+            }
             counter.innerText = `圖片： ${currentPlayImgIdx + 1} / ${currentPlayImgList.length}`;
 
             if (currentPlayImgList.length > 1) {
