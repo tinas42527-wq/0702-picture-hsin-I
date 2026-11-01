@@ -82,6 +82,35 @@
             border: 2px dashed #94a3b8;
         }
 
+
+        /* ===== 遊戲畫面：圖片與詞彙池同時完整顯示於螢幕 ===== */
+        :root { --game-top: 120px; }   /* 上方導覽列+按鈕列預留高度 */
+        .game-image {
+            /* 圖片高度不超過可視高度，確保詞彙池同屏可見 */
+            max-height: calc(100vh - var(--game-top) - 150px);
+        }
+        .slot { min-height: clamp(44px, 7vh, 64px); font-size: clamp(1rem, 2.6vh, 1.35rem); }
+        .pool-word-card {
+            padding: clamp(0.4rem, 1.4vh, 0.9rem) clamp(0.8rem, 1.6vw, 1.4rem);
+            font-size: clamp(1rem, 2.8vh, 1.6rem);
+        }
+        #cardPool {
+            max-height: calc(100vh - var(--game-top) - 330px);
+            min-height: 90px;
+            overflow-y: auto;
+            align-content: flex-start;
+        }
+        @media (min-width: 1024px) {
+            body { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+            nav { margin-bottom: 0.75rem !important; }
+            .game-image { max-height: calc(100vh - var(--game-top) - 130px); }
+            #cardPool { max-height: calc(100vh - var(--game-top) - 300px); }
+        }
+        @media (max-width: 1023px) {
+            .game-image { max-height: 42vh; }
+            #cardPool { max-height: none; overflow: visible; }
+        }
+
         @keyframes shakeSad {
             0%, 100% { transform: translateX(0); }
             20% { transform: translateX(-6px); }
@@ -124,36 +153,39 @@
 
                 <select id="sentenceSelect" class="hidden"></select>
                 
-                <div id="gameZone" class="hidden max-w-6xl mx-auto text-center">
-                    <div class="mb-4 flex items-center justify-between max-w-md mx-auto">
+                <div id="gameZone" class="hidden max-w-[1700px] mx-auto text-center">
+                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                         <button onclick="returnToGallery()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-cyan-600 transition font-medium">
                             ← 返回題目列表
+                        </button>
+                        <button onclick="toggleAnswerReveal()" id="btnRevealAnswer" class="flex items-center gap-2 text-sm bg-amber-500 text-white hover:bg-amber-600 transition font-bold px-3 py-1.5 rounded-lg shadow-sm">
+                            👁️ 公布正確答案
                         </button>
                         <button onclick="goToNextSentence()" class="flex items-center gap-2 text-sm bg-cyan-600 text-white hover:bg-cyan-700 transition font-bold px-3 py-1.5 rounded-lg shadow-sm">
                             下一題 →
                         </button>
                     </div>
-                    <div class="mb-4 flex justify-center">
-                        <button onclick="toggleAnswerReveal()" id="btnRevealAnswer" class="flex items-center gap-2 text-sm bg-amber-500 text-white hover:bg-amber-600 transition font-bold px-3 py-1.5 rounded-lg shadow-sm">
-                            👁️ 公布正確答案
-                        </button>
-                    </div>
-                    <div class="bg-white p-6 md:p-8 rounded-2xl mb-8 border border-slate-100 shadow-lg">
-                        <h2 id="targetChinese" class="text-3xl md:text-4xl font-bold text-slate-800 mb-4 whitespace-pre-line"></h2>
-                        
-                        <div id="imageArea" class="hidden py-4 flex flex-col justify-center items-center relative group">
-                            <div class="flex items-center justify-center w-full max-w-4xl relative">
-                                <button id="prevImgBtn" onclick="changeImage(-1)" class="hidden absolute left-2 bg-black/50 hover:bg-black/70 text-white font-bold w-12 h-12 rounded-full z-10 text-2xl transition">◀</button>
-                                
-                                <img id="targetImage" src="" onclick="openImageModal()" class="w-full max-w-4xl h-auto max-h-[80vh] object-contain rounded-xl shadow-md border border-slate-50 cursor-zoom-in hover:scale-[1.01] transition-transform" title="點擊放大全螢幕觀看">
-                                
-                                <button id="nextImgBtn" onclick="changeImage(1)" class="hidden absolute right-2 bg-black/50 hover:bg-black/70 text-white font-bold w-12 h-12 rounded-full z-10 text-2xl transition">▶</button>
-                            </div>
-                            <div id="imageCounter" class="mt-2 text-xs bg-slate-100 px-3 py-1 rounded-full text-slate-500 font-bold"></div>
-                            <p class="text-xs text-slate-400 mt-1 font-medium">🔍 點擊圖片可放大至全螢幕觀看</p>
-                        </div>
 
-                        <div class="pt-3 mt-2 border-t border-slate-100">
+                    <div class="game-layout grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 items-start">
+                        <!-- 左：題目文字 + 圖片 -->
+                        <div class="game-left bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-lg">
+                            <h2 id="targetChinese" class="text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 mb-2 whitespace-pre-line"></h2>
+
+                            <div id="imageArea" class="hidden py-1 flex flex-col justify-center items-center relative group">
+                                <div class="flex items-center justify-center w-full relative">
+                                    <button id="prevImgBtn" onclick="changeImage(-1)" class="hidden absolute left-2 bg-black/50 hover:bg-black/70 text-white font-bold w-10 h-10 rounded-full z-10 text-xl transition">◀</button>
+
+                                    <img id="targetImage" src="" onclick="openImageModal()" class="game-image w-auto max-w-full h-auto object-contain rounded-xl shadow-md border border-slate-50 cursor-zoom-in hover:scale-[1.01] transition-transform" title="點擊放大全螢幕觀看">
+
+                                    <button id="nextImgBtn" onclick="changeImage(1)" class="hidden absolute right-2 bg-black/50 hover:bg-black/70 text-white font-bold w-10 h-10 rounded-full z-10 text-xl transition">▶</button>
+                                </div>
+                                <div class="mt-1 flex items-center gap-2">
+                                    <div id="imageCounter" class="text-xs bg-slate-100 px-3 py-0.5 rounded-full text-slate-500 font-bold"></div>
+                                    <p class="text-xs text-slate-400 font-medium">🔍 點擊圖片可放大</p>
+                                </div>
+                            </div>
+
+                            <div class="pt-2 mt-1 border-t border-slate-100 text-left">
                             <button onclick="togglePlayEdit()" class="text-xs text-slate-400 hover:text-cyan-600 font-bold transition">✏️ 修改題目文字／圖片</button>
                             <div id="playEditPanel" class="hidden mt-3 text-left bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                                 <div>
@@ -175,18 +207,22 @@
                                 <p id="playEditMsg" class="hidden text-xs font-bold text-emerald-600"></p>
                             </div>
                         </div>
+                        </div>
 
-                    </div>
-                    <div id="resultFeedback" class="hidden text-2xl font-bold mb-4"></div>
-                    <div id="answerRevealBox" class="hidden text-sm font-bold text-amber-800 bg-amber-50 border-2 border-dashed border-amber-400 rounded-xl p-3 mb-4 max-w-xl mx-auto"></div>
-                    <div id="dropZone" class="flex flex-col items-center gap-3 mb-10 w-full"></div>
-                    <div id="poolContainer">
-                        <p id="poolHint" class="text-sm text-slate-500 font-medium mb-3 text-center">🃏 詞彙池 — 拖曳或點選放入格子，多餘的字不需要放入</p>
-                        <div id="cardPool" 
-                             class="flex flex-wrap justify-center gap-4 p-6 bg-white/50 rounded-2xl border border-dashed border-slate-300 min-h-[120px]"
-                             ondragover="event.preventDefault(); this.classList.add('drag-over')" 
-                             ondragleave="this.classList.remove('drag-over')" 
-                             ondrop="handleReturnToPool(event)">
+                        <!-- 右：作答格 + 詞彙池 -->
+                        <div class="game-right flex flex-col gap-3">
+                            <div id="resultFeedback" class="hidden text-xl md:text-2xl font-bold"></div>
+                            <div id="answerRevealBox" class="hidden text-sm font-bold text-amber-800 bg-amber-50 border-2 border-dashed border-amber-400 rounded-xl p-3 w-full"></div>
+                            <div id="dropZone" class="flex flex-col items-center gap-2 w-full"></div>
+                            <div id="poolContainer">
+                                <p id="poolHint" class="text-xs md:text-sm text-slate-500 font-medium mb-2 text-center">🃏 詞彙池 — 拖曳或點選放入格子，多餘的字不需要放入</p>
+                                <div id="cardPool"
+                                     class="flex flex-wrap justify-center gap-2 md:gap-3 p-3 bg-white/50 rounded-2xl border border-dashed border-slate-300 min-h-[100px]"
+                                     ondragover="event.preventDefault(); this.classList.add('drag-over')"
+                                     ondragleave="this.classList.remove('drag-over')"
+                                     ondrop="handleReturnToPool(event)">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -230,7 +266,7 @@
                             <h2 class="text-xl font-bold text-cyan-600">句型教材編輯與關聯 (自動高壓縮)</h2>
                             <p class="text-[11px] text-slate-400 font-medium mt-0.5">💡 提示：在區塊內按住題目即可「上下拖曳排序」，取消勾選則前台不顯示</p>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap justify-end">
                             <span id="totalSentenceCount" class="text-xs bg-cyan-100 text-cyan-700 px-3 py-1.5 rounded-full font-bold whitespace-nowrap">總題數：0</span>
                             <button id="btnSelectAll" onclick="setAllSentencesEnable(true)" class="text-xs px-2 py-1 rounded transition whitespace-nowrap border flex items-center gap-1">
                                 <span class="check-mark hidden">✅</span><span class="uncheck-mark">⬜</span> 全選
@@ -238,6 +274,8 @@
                             <button id="btnDeselectAll" onclick="setAllSentencesEnable(false)" class="text-xs px-2 py-1 rounded transition whitespace-nowrap border flex items-center gap-1">
                                 <span class="check-mark hidden">✅</span><span class="uncheck-mark">⬜</span> 全不選
                             </button>
+                            <button onclick="collapseAllGroups(true)" class="text-xs px-2 py-1 rounded transition whitespace-nowrap border bg-white border-slate-300 text-slate-600 hover:bg-slate-100 font-bold">📁 全部收合</button>
+                            <button onclick="collapseAllGroups(false)" class="text-xs px-2 py-1 rounded transition whitespace-nowrap border bg-white border-slate-300 text-slate-600 hover:bg-slate-100 font-bold">📂 全部展開</button>
                             <button onclick="clearAllSentences()" class="text-xs bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-500 hover:text-white transition whitespace-nowrap">一鍵清除全部句型</button>
                         </div>
                     </div>
@@ -1434,10 +1472,10 @@
             let dropZoneHtml = '';
 
             targetLines.forEach((lineWords) => {
-                dropZoneHtml += `<div class="flex flex-wrap justify-center gap-3 md:gap-4 w-full">`;
+                dropZoneHtml += `<div class="flex flex-wrap justify-center gap-2 md:gap-3 w-full">`;
                 lineWords.forEach(() => {
                     const i = globalSlotIdx++;
-                    dropZoneHtml += `<div class="slot min-w-[90px] md:min-w-[130px] flex-1 max-w-[180px] text-lg md:text-xl font-bold" id="slot-${i}" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event, ${i})" oncontextmenu="return handleSlotRightClick(event, ${i})" onclick="handleSlotLeftClick(${i})">待填入</div>`;
+                    dropZoneHtml += `<div class="slot min-w-[80px] md:min-w-[100px] flex-1 max-w-[160px] font-bold" id="slot-${i}" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event, ${i})" oncontextmenu="return handleSlotRightClick(event, ${i})" onclick="handleSlotLeftClick(${i})">待填入</div>`;
                 });
                 dropZoneHtml += `</div>`;
             });
@@ -1474,7 +1512,7 @@
                 card.dataset.poolIdx = String(poolIdx);
                 card.draggable = true;
                 card.textContent = w;
-                card.className = 'pool-word-card bg-white px-6 py-4 rounded-xl font-bold text-xl md:text-2xl border-b-4 border-slate-200 hover:bg-violet-50 hover:border-violet-300 transition shadow-sm text-slate-700 cursor-grab select-none';
+                card.className = 'pool-word-card bg-white rounded-xl font-bold border-b-4 border-slate-200 hover:bg-violet-50 hover:border-violet-300 transition shadow-sm text-slate-700 cursor-grab select-none';
                 card.addEventListener('dragstart', e => {
                     e.dataTransfer.setData('text/plain', w);
                     e.dataTransfer.setData('fromSlotIdx', '');
@@ -1665,6 +1703,19 @@
             }
         }
 
+        function collapseAllGroups(collapse) {
+            const list = document.getElementById('sentList');
+            if (!list) return;
+            list.querySelectorAll('[id^="book-group-"], [id^="unit-group-"]').forEach(el => {
+                const id = el.id;
+                const arrow = document.getElementById('arrow-' + id);
+                el.classList.toggle('hidden', collapse);
+                if (arrow) arrow.innerText = collapse ? '▶' : '▼';
+                if (collapse) { openGroupIds.delete(id); closedGroupIds.add(id); }
+                else { openGroupIds.add(id); closedGroupIds.delete(id); }
+            });
+        }
+
         function toggleGroupCollapse(id) {
             const target = document.getElementById(id);
             const arrow = document.getElementById('arrow-' + id);
@@ -1826,7 +1877,9 @@
                             <span class="text-xs bg-cyan-700 text-white px-2.5 py-1 rounded-lg shadow-sm font-bold">📘 ${book}</span>
                             <span class="text-xs text-slate-600 font-medium">（全冊共 ${totalBookSentences} 題）</span>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-3">
+                            <button onclick="event.stopPropagation(); toggleGroupAll('${Object.values(units).flat().map(item => item.idx).join(',')}', true)" class="text-xs text-cyan-700 hover:underline font-bold">全選</button>
+                            <button onclick="event.stopPropagation(); toggleGroupAll('${Object.values(units).flat().map(item => item.idx).join(',')}', false)" class="text-xs text-slate-600 hover:underline font-bold">全不選</button>
                             <span id="arrow-${bookGroupId}" class="text-slate-600 text-xs font-bold">${isBookOpen ? '▼' : '▶'}</span>
                         </div>
                     </div>
